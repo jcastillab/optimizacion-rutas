@@ -29,5 +29,9 @@ class Settings(BaseSettings):
     # (absorbe el ruido de punto flotante al sumar tramos en otro orden).
     tolerancia_gap_pct: float = 1e-6
 
+    # Decimales (6 ≈ 0,1 m) con que se comparan coordenadas para detectar
+    # variantes con las mismas paradas (la fuente repite rutas FDS).
+    decimales_coordenada: int = 6
+
 
 settings = Settings()

@@ -19,6 +19,7 @@ from dataclasses import asdict, dataclass
 import pandas as pd
 
 from app.core.config import settings
+from app.etl.build_tables import variantes_con_mismas_paradas
 from app.services.distancia import Coord, distancia_total_km, matriz_haversine_km
 from app.services.orden_paradas import ordenar_paradas
 from app.services.recorrido import calcular_recorrido
@@ -106,13 +107,20 @@ def evaluar_orden(
 
 
 def evaluar_variantes(
-    paradas: pd.DataFrame, umbral_atipico_km: float, max_n: int | None = None
+    paradas: pd.DataFrame,
+    umbral_atipico_km: float,
+    max_n: int | None = None,
+    tipo_dia_de: dict[int, str] | None = None,
 ) -> pd.DataFrame:
     """Una fila por ``ruta_variante_id`` de ``paradas.csv``.
 
     Usa las mismas exclusiones que ``calcular_recorrido`` (sin coordenada,
     atípicas); el orden original es el de las filas válidas en el archivo.
+    ``duplicada_de`` es la primera variante con las mismas paradas (la fuente
+    repite rutas FDS), para no sumarlas dos veces en los totales; con
+    ``tipo_dia_de`` solo se compara dentro del mismo tipo de día.
     """
+    duplicadas = variantes_con_mismas_paradas(paradas, tipo_dia_de)
     filas = []
     # dropna=False: una parada sin variante sale como fila con id NaN, no se pierde.
     for variante, sub in paradas.groupby("ruta_variante_id", sort=True, dropna=False):
@@ -121,7 +129,13 @@ def evaluar_variantes(
         originales = sub[sub["parada_id"].isin(validas)]
         coords = list(zip(originales["lat"], originales["lon"]))
         evaluacion = evaluar_orden(coords, max_n, distancia_heuristica_km=rec.distancia_km)
-        filas.append({"ruta_variante_id": variante, **asdict(evaluacion)})
+        filas.append(
+            {
+                "ruta_variante_id": variante,
+                **asdict(evaluacion),
+                "duplicada_de": duplicadas.get(variante),
+            }
+        )
     return pd.DataFrame(
         filas,
         columns=[
@@ -132,5 +146,6 @@ def evaluar_variantes(
             "distancia_optima_km",
             "gap_pct",
             "mejora_vs_original_pct",
+            "duplicada_de",
         ],
     )

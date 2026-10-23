@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
+from app.core.config import settings
 from app.etl.load_master import DatosCrudos
 from app.etl.normalize import (
     colapsar_espacios,
@@ -38,6 +39,31 @@ class TablasProcesadas:
 
 def _id_map(claves: set[str]) -> dict[str, int]:
     return {clave: i + 1 for i, clave in enumerate(sorted(claves))}
+
+
+def variantes_con_mismas_paradas(
+    paradas: pd.DataFrame, tipo_dia_de: dict[int, str] | None = None
+) -> dict[int, int]:
+    """{variante: primera variante (menor id) con el mismo conjunto de paradas}.
+
+    Compara (nombre, lat, lon) redondeadas a ``settings.decimales_coordenada``,
+    sin importar el orden. Con ``tipo_dia_de`` solo compara variantes del mismo
+    tipo de día. Las variantes únicas no aparecen como clave; las paradas sin
+    coordenada (NaN) nunca coinciden.
+    """
+    if paradas.empty:
+        return {}
+    dec = settings.decimales_coordenada
+    firmas: dict[tuple, int] = {}
+    duplicadas: dict[int, int] = {}
+    for variante, sub in paradas.groupby("ruta_variante_id", sort=True):
+        conjunto = frozenset(zip(sub["nombre"], sub["lat"].round(dec), sub["lon"].round(dec)))
+        firma = ((tipo_dia_de or {}).get(variante), conjunto)
+        if firma in firmas:
+            duplicadas[variante] = firmas[firma]
+        else:
+            firmas[firma] = variante
+    return duplicadas
 
 
 def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
@@ -67,7 +93,13 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
     pos = datos.posiciones.copy()
     pos["ruta_norm"] = pos["ruta"].map(normalizar_clave)
     pos["ruta_base_norm"], pos["tipo_dia"] = zip(*pos["ruta_norm"].map(separar_tipo_dia))
-    pos["ruta_base_norm"] = pos["ruta_base_norm"].map(resolver_alias)
+    # El alias sirve para cruzar con el maestro (solo LABORAL) y para buscar
+    # coordenadas; en FESTIVO no hay maestro y aplicarlo fusionaría rutas
+    # distintas de la fuente (p. ej. FUNZA(R1) FDS y FUNZA, MSOQUERA(R1) FDS).
+    pos["ruta_base_cruce"] = pos["ruta_base_norm"].map(resolver_alias)
+    pos["ruta_base_norm"] = pos["ruta_base_norm"].where(
+        pos["tipo_dia"] == "FESTIVO", pos["ruta_base_cruce"]
+    )
     pos["parada_norm"] = pos["parada"].map(normalizar_clave)
     pos["nivel2_norm"] = pos["nivel2"].map(colapsar_espacios).str.upper()
 
@@ -93,6 +125,7 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
     tf["ruta_base_id"] = tf["ruta_base_norm"].map(mapa_ruta_base)
     pos_yarumo["ruta_base_id"] = pos_yarumo["ruta_base_norm"].map(mapa_ruta_base)
     pos["ruta_base_id"] = pos["ruta_base_norm"].map(mapa_ruta_base)
+    pos["ruta_base_cruce_id"] = pos["ruta_base_cruce"].map(mapa_ruta_base)
 
     rutas_sin_tarifa = set(rp["ruta_base_norm"]) - set(tf["ruta_base_norm"])
     if rutas_sin_tarifa:
@@ -152,7 +185,7 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
             # muchas paradas (p. ej. LA AURORA) están bajo BQT PRADERA / PRADERA SECTOR.
             # Si un nombre aparece en varias, gana la fila de Yarumo (alcance).
             candidatas_pos = (
-                pos[pos["ruta_base_id"] == base_id]
+                pos[pos["ruta_base_cruce_id"] == base_id]
                 .assign(en_alcance=lambda d: d["nivel2_norm"].isin(fincas_alcance))
                 .sort_values("en_alcance", ascending=False, kind="stable")
             )
@@ -221,6 +254,24 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
                 )
 
     paradas = pd.DataFrame(paradas_rows)
+    tipo_dia_de = dict(zip(rutas_variante["ruta_variante_id"], rutas_variante["tipo_dia"]))
+    duplicadas = variantes_con_mismas_paradas(paradas, tipo_dia_de)
+    if duplicadas:
+        nombre_base = rutas_base.set_index("ruta_base_id")["nombre"]
+        variante = rutas_variante.set_index("ruta_variante_id")
+
+        def etiqueta(v: int) -> str:
+            return f"{nombre_base[variante.at[v, 'ruta_base_id']]} {variante.at[v, 'tipo_dia']}"
+
+        grupos: dict[int, list[int]] = {}
+        for dup, primera in duplicadas.items():
+            grupos.setdefault(primera, [primera]).append(dup)
+        issues.append(
+            "Variantes con las mismas paradas (nombre y coordenadas) que otra, tal "
+            "como vienen en el archivo de posiciones; se conservan separadas: "
+            + "; ".join(" = ".join(etiqueta(v) for v in sorted(g)) for g in grupos.values())
+            + "."
+        )
     if paradas_otra_ruta:
         issues.append(
             f"{len(paradas_otra_ruta)} paradas tomaron coordenada de otra ruta del "

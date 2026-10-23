@@ -26,7 +26,8 @@ def main() -> None:
 
     paradas = pd.read_csv(settings.processed_dir / "paradas.csv")
     variantes = pd.read_csv(settings.processed_dir / "rutas_variante.csv")
-    tabla = evaluar_variantes(paradas, settings.umbral_atipico_km)
+    tipo_dia_de = dict(zip(variantes["ruta_variante_id"], variantes["tipo_dia"]))
+    tabla = evaluar_variantes(paradas, settings.umbral_atipico_km, tipo_dia_de=tipo_dia_de)
     tabla = tabla.merge(variantes[["ruta_variante_id", "tipo_dia"]], on="ruta_variante_id", how="left")
     sin_paradas = sorted(set(variantes["ruta_variante_id"]) - set(tabla["ruta_variante_id"]))
 
@@ -45,8 +46,18 @@ def main() -> None:
         )
     # "Original" = orden de filas del archivo (por ID en LABORAL), no el recorrido
     # ejecutado: la mejora mide cuánto ordena la heurística, no un ahorro operativo.
-    print("Heurística vs. orden del archivo (no es el recorrido real ejecutado):")
-    for tipo, grupo in tabla.groupby("tipo_dia", dropna=False):
+    # Una fila por conjunto de paradas. La distancia original sí depende del orden
+    # de filas de cada copia, así que se usa el promedio del grupo, no la primera.
+    grupo = tabla["duplicada_de"].fillna(tabla["ruta_variante_id"])
+    unicas = tabla[tabla["duplicada_de"].isna()].copy()
+    unicas["distancia_original_km"] = unicas["ruta_variante_id"].map(
+        tabla.groupby(grupo)["distancia_original_km"].mean()
+    )
+    print(
+        "Heurística vs. orden del archivo (no es el recorrido real ejecutado; "
+        f"sin contar {len(tabla) - len(unicas)} variantes con las mismas paradas que otra):"
+    )
+    for tipo, grupo in unicas.groupby("tipo_dia", dropna=False):
         orig, heur = grupo["distancia_original_km"].sum(), grupo["distancia_heuristica_km"].sum()
         if orig:
             print(f"  {tipo}: {len(grupo)} variantes, {orig:.1f} km -> {heur:.1f} km ({(orig - heur) / orig * 100:.1f} % menos)")

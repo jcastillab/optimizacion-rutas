@@ -200,3 +200,19 @@ def test_evaluar_variantes_una_fila_por_variante_con_exclusiones():
             rec.distancia_km, abs=1e-9
         )
         assert filas.loc[vid, "distancia_optima_km"] <= rec.distancia_km + 1e-9
+
+
+# --- Variantes con las mismas paradas no se cuentan dos veces ------------------
+
+def test_evaluar_variantes_marca_duplicadas():
+    filas = [
+        (1, 1, "A", 4.80, -74.30), (2, 1, "B", 4.84, -74.34), (3, 1, "C", 4.82, -74.36),
+        (4, 2, "C", 4.82, -74.36), (5, 2, "A", 4.80, -74.30), (6, 2, "B", 4.84, -74.34),
+        (7, 3, "A", 4.80, -74.30), (8, 3, "D", 4.90, -74.20),
+    ]
+    paradas = pd.DataFrame(filas, columns=["parada_id", "ruta_variante_id", "nombre", "lat", "lon"])
+    res = evaluar_variantes(paradas, umbral_atipico_km=30.0).set_index("ruta_variante_id")
+
+    assert pd.isna(res.at[1, "duplicada_de"])
+    assert res.at[2, "duplicada_de"] == 1
+    assert pd.isna(res.at[3, "duplicada_de"])

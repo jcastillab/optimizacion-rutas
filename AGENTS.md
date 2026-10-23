@@ -25,7 +25,15 @@ un reporte de reconciliación.
 5. **Todo parámetro vive en `app/core/config.py`**, nunca hardcodeado.
    Deuda conocida: `UMBRAL_METROS` y `UMBRAL_NOMBRE` en
    `scripts/cruce_fincas.py:38-39`; `max_desvio_metros` en config no se usa.
-6. **Los insumos crudos (`datos/`, Excel/KML) no se editan a mano ni se
+6. **FESTIVO sale solo del archivo de posiciones y no usa `ALIAS_RUTAS`**
+   (el alias es para cruzar LABORAL con el maestro y buscar coordenadas). La
+   fuente repite el mismo conjunto de paradas en varias rutas FDS de un
+   municipio (FACATATIVA R1-R3, MADRID R1-R3, ROSAL R1-R5): se conservan
+   separadas, el reporte de reconciliación las lista y `evaluar_baseline.py`
+   las cuenta una vez (distancia original = promedio del grupo). Deuda: la
+   base FESTIVO `FUNZA, MSOQUERA(R1)` no tiene tarifa propia (la tarifa
+   aplica el alias y queda en `FUNZA(R1)`).
+7. **Los insumos crudos (`datos/`, Excel/KML) no se editan a mano ni se
    versionan**; `data/` es salida regenerable del ETL.
 
 ## Qué es realmente el núcleo
