@@ -21,5 +21,13 @@ class Settings(BaseSettings):
     # considera coordenada atípica (error de captura) y se excluye del recorrido.
     umbral_atipico_km: float = 30.0
 
+    # Máximo de paradas para calcular el óptimo exacto (Held-Karp, O(n²·2ⁿ))
+    # al medir la heurística contra el baseline. 12 paradas ≈ 600 mil pasos.
+    max_paradas_optimo_exacto: int = 12
+
+    # Gap (%) por debajo del cual se cuenta que la heurística llegó al óptimo
+    # (absorbe el ruido de punto flotante al sumar tramos en otro orden).
+    tolerancia_gap_pct: float = 1e-6
+
 
 settings = Settings()

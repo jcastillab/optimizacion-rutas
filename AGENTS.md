@@ -69,6 +69,9 @@ manual/              Manuales para personas (skill estilo-documentacion)
 # Mapa interactivo de recorridos: data/processed -> data/mapa_rutas.html
 .\venv\Scripts\python.exe scripts\build_map.py
 
+# Heurística vs. orden original y óptimo exacto (gap %) por variante:
+.\venv\Scripts\python.exe scripts\evaluar_baseline.py [--csv tabla.csv]
+
 # Mapa de rutas y fincas del KML (orden de aparición en el Excel):
 .\venv\Scripts\python.exe scripts\mapa_rutas.py [--ruta "PAPIROS"]
 ```
@@ -78,8 +81,9 @@ manual/              Manuales para personas (skill estilo-documentacion)
 1. `pytest -q` verde.
 2. Si tocaste ETL o servicios: `run_etl.py` y `build_map.py` corren sin error
    y `data/mapa_rutas.html` abre con todas las rutas.
-3. Si tocaste el orden de paradas: reporta `distancia_km` total antes/después
-   y el gap contra el óptimo en las rutas chicas.
+3. Si tocaste el orden de paradas: corre `scripts\evaluar_baseline.py` antes y
+   después y reporta el gap medio/máximo y las rutas en el óptimo. Referencia
+   2026-10-23: 12/14 rutas en el óptimo, gap medio 0,38 %, máximo 4,38 %.
 
 ## Cómo se trabaja aquí
 
