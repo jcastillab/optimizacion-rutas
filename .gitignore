@@ -1,0 +1,24 @@
+# Entornos y cachés
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Configuración personal de Claude Code (la compartida es .claude/settings.json)
+.claude/settings.local.json
+CLAUDE.local.md
+
+# Editor / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Datos (ajustar por proyecto: insumos crudos y salidas generadas)
+datos/
+data/
+*.xlsx
+*.kml

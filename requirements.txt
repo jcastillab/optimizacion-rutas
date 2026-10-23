@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+pandas
+openpyxl
+folium
+pulp
+pytest
