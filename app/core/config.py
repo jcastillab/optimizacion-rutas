@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # (absorbe el ruido de punto flotante al sumar tramos en otro orden).
     tolerancia_gap_pct: float = 1e-6
 
+    # Cruce parada↔finca (scripts/cruce_fincas.py): distancia máxima en metros y
+    # similitud mínima de nombre (difflib) para aceptar una coincidencia.
+    umbral_cruce_metros: float = 300.0
+    umbral_cruce_nombre: float = 0.85
+
     # Decimales (6 ≈ 0,1 m) con que se comparan coordenadas para detectar
     # variantes con las mismas paradas (la fuente repite rutas FDS).
     decimales_coordenada: int = 6

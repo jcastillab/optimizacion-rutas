@@ -6,7 +6,7 @@ Genera:
     datos/cruce_rutas_fincas.xlsx   -> hojas: paradas_vs_fincas, fincas, diccionario
 
 Criterio de cruce:
-    1. COORD: finca de punto más cercana a <= UMBRAL_METROS.
+    1. COORD: finca de punto más cercana a <= umbral_cruce_metros (config).
     2. NOMBRE: la clave normalizada de la parada (Ruta/Parada/Nivel2) coincide
        con la clave de una finca del diccionario (exacta o aproximada).
     Si ambos métodos dan finca distinta se marca CONFLICTO.
@@ -31,12 +31,14 @@ from pathlib import Path
 
 import openpyxl
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from app.core.config import settings  # noqa: E402
+
 RAIZ = Path(__file__).resolve().parents[1]
 DATOS = RAIZ / "datos"
 EXCEL_PARADAS = DATOS / "rutas y paradas con posicion.xlsx"
 KML_NS = "{http://www.opengis.net/kml/2.2}"
-UMBRAL_METROS = 300.0
-UMBRAL_NOMBRE = 0.85
 
 # Alias manuales: texto normalizado que aparece en el archivo de paradas
 # -> clave normalizada de la finca en el KML. Completar al revisar el reporte.
@@ -174,7 +176,7 @@ def finca_por_nombre(texto: str, diccionario: dict[str, str]) -> tuple[str, str]
     for c in candidatas:
         if not c or len(c) < 4:
             continue
-        mejor = difflib.get_close_matches(c, list(diccionario), n=1, cutoff=UMBRAL_NOMBRE)
+        mejor = difflib.get_close_matches(c, list(diccionario), n=1, cutoff=settings.umbral_cruce_nombre)
         if mejor:
             return diccionario[mejor[0]], "NOMBRE_APROX"
     return None
@@ -193,7 +195,7 @@ def cruzar(paradas: list[dict], fincas: list[dict], diccionario: dict[str, str])
             )
             if cercana:
                 d = distancia_m(p["lat"], p["lng"], cercana["lat"], cercana["lng"])
-                if d <= UMBRAL_METROS:
+                if d <= settings.umbral_cruce_metros:
                     por_coord = (cercana["nombre_kml"], round(d, 1))
 
         # El Nivel2 (p. ej. "BQT PRADERA") suele ser la finca; si no cruza,
