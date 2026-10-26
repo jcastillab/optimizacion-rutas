@@ -50,6 +50,11 @@ un reporte de reconciliación.
   con `ordenar_paradas` y suma la distancia.
 - `scripts/cruce_fincas.py`: cruza paradas con las fincas del KML por
   distancia (300 m) y similitud de nombre (0.85).
+- `app/services/simulador_rutas.py`: arma rutas nuevas con paraderos existentes
+  (semilla = más personas, crece hacia la más cercana mientras el recorrido
+  quepa en `velocidad_bus_kmh` × `tiempo_max_viaje_min`) y elige bus y cantidad
+  por costo mínimo. Supuestos: la persona viaja hasta el último paradero de la
+  ruta (no hay destino en los datos); costo de bus = mediana REGULAR por tipo.
 - `app/api/`, `app/repository/`, `app/schemas/`: esqueletos vacíos (la API
   FastAPI aún no existe).
 
@@ -83,6 +88,10 @@ manual/              Manuales para personas (skill estilo-documentacion)
 
 # Heurística vs. orden original y óptimo exacto (gap %) por variante:
 .\venv\Scripts\python.exe scripts\evaluar_baseline.py [--csv tabla.csv]
+
+# Simulador: rutas nuevas con paraderos existentes, bus y cantidad por ruta
+# (velocidad y tiempo máximo en config; salida en data/simulador/):
+.\venv\Scripts\python.exe scripts\simular_rutas.py
 
 # Mapa de rutas y fincas del KML (orden de aparición en el Excel):
 .\venv\Scripts\python.exe scripts\mapa_rutas.py [--ruta "PAPIROS"]

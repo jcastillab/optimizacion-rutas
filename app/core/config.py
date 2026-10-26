@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # (absorbe el ruido de punto flotante al sumar tramos en otro orden).
     tolerancia_gap_pct: float = 1e-6
 
+    # Simulador de rutas nuevas: velocidad media del bus y tiempo máximo que una
+    # persona puede pasar en el bus (confirmados por el usuario).
+    velocidad_bus_kmh: float = 25.0
+    tiempo_max_viaje_min: float = 60.0
+
     # Cruce parada↔finca (scripts/cruce_fincas.py): distancia máxima en metros y
     # similitud mínima de nombre (difflib) para aceptar una coincidencia.
     umbral_cruce_metros: float = 300.0
