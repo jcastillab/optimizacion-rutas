@@ -67,34 +67,14 @@ POS_FUNZA = [
 ]
 
 
-def test_festivo_no_fusiona_rutas_con_alias(monkeypatch):
-    # Se desactiva la ocultación para probar solo la separación por alias.
-    monkeypatch.setattr(settings, "rutas_festivo_ocultas", [])
+def test_festivo_une_rutas_con_alias():
+    # Confirmado: "FUNZA, MSOQUERA(R1) FDS" es la FDS de FUNZA(R1).
     tablas = construir_tablas(_datos(POS_FUNZA))
 
-    nombres_base = set(tablas.rutas_base["nombre"])
-    assert {"FUNZA(R1)", "FUNZA, MSOQUERA(R1)"} <= nombres_base
-
+    assert "FUNZA, MSOQUERA(R1)" not in set(tablas.rutas_base["nombre"])
     festivo = _paradas_por_base(tablas, "FESTIVO")
-    assert festivo.get("FUNZA(R1)") == {"A", "B"}
-    assert festivo.get("FUNZA, MSOQUERA(R1)") == {"C", "D"}
-    # dos variantes FESTIVO distintas
-    assert len([b for b in festivo if b.startswith("FUNZA")]) == 2
-
-
-def test_festivo_oculta_variante_sin_quitar_coordenadas_laborales():
-    tablas = construir_tablas(_datos(POS_FUNZA, catalogo=(("FUNZA(R1)", "C"),)))
-
-    festivo = _paradas_por_base(tablas, "FESTIVO")
-    assert "FUNZA, MSOQUERA(R1)" not in festivo
-    assert festivo.get("FUNZA(R1)") == {"A", "B"}
-    assert any("rutas_festivo_ocultas" in i and "MSOQUERA" in i for i in tablas.issues)
-
-    # la coordenada de C sigue viniendo de las filas ocultas
-    p = tablas.paradas[tablas.paradas["nombre"] == "C"]
-    assert len(p) == 1
-    assert p.iloc[0]["coord_match_status"] == "EXACTO"
-    assert p.iloc[0]["lat"] == pytest.approx(COORDS["C"][0])
+    assert festivo.get("FUNZA(R1)") == {"A", "B", "C", "D"}
+    assert len([b for b in festivo if b.startswith("FUNZA")]) == 1
 
 
 # --- criterio 2: LABORAL sigue usando el alias para coordenadas ------------
@@ -202,8 +182,8 @@ def test_smoke_datos_reales_festivo():
     vid = dict(zip(rv["nombre"], rv["ruta_variante_id"]))
     n_paradas = tablas.paradas["ruta_variante_id"].value_counts()
 
-    assert n_paradas.get(vid.get("FUNZA(R1)"), 0) == 20
-    # oculta por configuración hasta confirmar la ruta y su tarifa
+    # 20 de "FUNZA(R1) FDS" + 31 de "FUNZA, MSOQUERA(R1) FDS", sin paradas en común
+    assert n_paradas.get(vid.get("FUNZA(R1)"), 0) == 51
     assert "FUNZA, MSOQUERA(R1)" not in vid
 
     from app.etl.build_tables import variantes_con_mismas_paradas

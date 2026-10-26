@@ -93,13 +93,7 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
     pos = datos.posiciones.copy()
     pos["ruta_norm"] = pos["ruta"].map(normalizar_clave)
     pos["ruta_base_norm"], pos["tipo_dia"] = zip(*pos["ruta_norm"].map(separar_tipo_dia))
-    # El alias sirve para cruzar con el maestro (solo LABORAL) y para buscar
-    # coordenadas; en FESTIVO no hay maestro y aplicarlo fusionaría rutas
-    # distintas de la fuente (p. ej. FUNZA(R1) FDS y FUNZA, MSOQUERA(R1) FDS).
-    pos["ruta_base_cruce"] = pos["ruta_base_norm"].map(resolver_alias)
-    pos["ruta_base_norm"] = pos["ruta_base_norm"].where(
-        pos["tipo_dia"] == "FESTIVO", pos["ruta_base_cruce"]
-    )
+    pos["ruta_base_norm"] = pos["ruta_base_norm"].map(resolver_alias)
     pos["parada_norm"] = pos["parada"].map(normalizar_clave)
     pos["nivel2_norm"] = pos["nivel2"].map(colapsar_espacios).str.upper()
 
@@ -111,18 +105,6 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
             "No se encontró ninguna fila del archivo de posiciones para las "
             f"fincas en alcance ({sorted(fincas_alcance)})."
         )
-    # Solo se ocultan las FESTIVO: `pos` (con esas filas) sigue dando coordenadas LABORAL.
-    oculta = pos_yarumo["tipo_dia"].eq("FESTIVO") & pos_yarumo["ruta_base_norm"].isin(
-        settings.rutas_festivo_ocultas
-    )
-    if oculta.any():
-        issues.append(
-            "Variantes FESTIVO ocultas por configuración (rutas_festivo_ocultas): "
-            f"{sorted(set(pos_yarumo.loc[oculta, 'ruta_base_norm']))} "
-            f"({int(oculta.sum())} filas de posiciones). Sus coordenadas siguen "
-            "usándose para las paradas laborales."
-        )
-    pos_yarumo = pos_yarumo[~oculta].copy()
 
     # --- rutas_base: unión de nombres base normalizados ----------------
     claves_base = (
@@ -137,7 +119,6 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
     tf["ruta_base_id"] = tf["ruta_base_norm"].map(mapa_ruta_base)
     pos_yarumo["ruta_base_id"] = pos_yarumo["ruta_base_norm"].map(mapa_ruta_base)
     pos["ruta_base_id"] = pos["ruta_base_norm"].map(mapa_ruta_base)
-    pos["ruta_base_cruce_id"] = pos["ruta_base_cruce"].map(mapa_ruta_base)
 
     rutas_sin_tarifa = set(rp["ruta_base_norm"]) - set(tf["ruta_base_norm"])
     if rutas_sin_tarifa:
@@ -197,7 +178,7 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
             # muchas paradas (p. ej. LA AURORA) están bajo BQT PRADERA / PRADERA SECTOR.
             # Si un nombre aparece en varias, gana la fila de Yarumo (alcance).
             candidatas_pos = (
-                pos[pos["ruta_base_cruce_id"] == base_id]
+                pos[pos["ruta_base_id"] == base_id]
                 .assign(en_alcance=lambda d: d["nivel2_norm"].isin(fincas_alcance))
                 .sort_values("en_alcance", ascending=False, kind="stable")
             )

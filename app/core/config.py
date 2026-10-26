@@ -34,10 +34,6 @@ class Settings(BaseSettings):
     umbral_cruce_metros: float = 300.0
     umbral_cruce_nombre: float = 0.85
 
-    # Rutas FDS cuya variante FESTIVO se oculta de las salidas hasta confirmar su
-    # tarifa y su nombre. Sus filas siguen dando coordenadas a las paradas LABORAL.
-    rutas_festivo_ocultas: list[str] = ["FUNZA, MSOQUERA(R1)"]
-
     # Decimales (6 ≈ 0,1 m) con que se comparan coordenadas para detectar
     # variantes con las mismas paradas (la fuente repite rutas FDS).
     decimales_coordenada: int = 6

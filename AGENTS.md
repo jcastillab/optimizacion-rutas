@@ -25,18 +25,15 @@ un reporte de reconciliación.
 5. **Todo parámetro vive en `app/core/config.py`**, nunca hardcodeado.
    Deuda conocida: `UMBRAL_METROS` y `UMBRAL_NOMBRE` en
    `scripts/cruce_fincas.py:38-39`; `max_desvio_metros` en config no se usa.
-6. **FESTIVO sale solo del archivo de posiciones y no usa `ALIAS_RUTAS`**
-   (el alias es para cruzar LABORAL con el maestro y buscar coordenadas). La
-   fuente repite el mismo conjunto de paradas en varias rutas FDS de un
-   municipio (FACATATIVA R1-R3, MADRID R1-R3, ROSAL R1-R5): se conservan
-   separadas, el reporte de reconciliación las lista y `evaluar_baseline.py`
-   las cuenta una vez (distancia original = promedio del grupo).
-   La variante FESTIVO `FUNZA, MSOQUERA(R1)` (31 paradas) está oculta en
-   `rutas_festivo_ocultas` (config): no se sabe a qué ruta corresponde ni
-   tiene tarifa. Sus filas siguen dando coordenadas a FUNZA(R1) LABORAL.
-   Al confirmar la ruta: la tarifa va en el Excel como `<RUTA> FDS` con
-   `tipo_tarifa = FESTIVOS` (como FACATATIVA(R1) FDS), y el nombre debe
-   coincidir con el de las paradas (el alias `MSOQUERA` está en normalize.py).
+6. **Las rutas FDS usan el mismo alias que las LABORAL** (`ALIAS_RUTAS`):
+   `FUNZA, MSOQUERA(R1) FDS` es la FDS de FUNZA(R1) (confirmado por el usuario;
+   51 paradas, sin paradas en común con "FUNZA(R1) FDS"). La fuente repite el
+   mismo conjunto de paradas en varias rutas FDS de un municipio (FACATATIVA
+   R1-R3, MADRID R1-R3, ROSAL R1-R5): se conservan separadas, el reporte de
+   reconciliación las lista y `evaluar_baseline.py` las cuenta una vez
+   (distancia original = promedio del grupo).
+   Deuda: FUNZA(R1) FESTIVO no tiene tarifa propia aún. Va en el Excel como
+   fila `FUNZA(R1) FDS` con `tipo_tarifa = FESTIVOS`, como FACATATIVA(R1) FDS.
 7. **Los insumos crudos (`datos/`, Excel/KML) no se editan a mano ni se
    versionan**; `data/` es salida regenerable del ETL.
 
