@@ -9,9 +9,9 @@ un reporte de reconciliación.
 
 1. **El "optimizador" es una heurística TSP de camino abierto, no LP.**
    Vecino más cercano + 2-opt sobre distancia haversine
-   (`app/services/orden_paradas.py`). `pulp` está en `requirements.txt` pero
-   no se usa en ningún archivo propio. Cualquier cambio al algoritmo se mide
-   contra el baseline (regla 2).
+   (`app/services/orden_paradas.py`). Cualquier cambio al algoritmo se mide
+   contra el baseline (regla 2). `pulp` ya no está: el MILP del simulador usa
+   `highspy` (HiGHS) directamente.
 2. **Baseline obligatorio para tocar el orden de paradas**: orden original del
    archivo fuente y óptimo exacto en rutas chicas; métrica `distancia_km` y
    gap % contra el óptimo (skill `protocolo-matematico`, sección
@@ -52,24 +52,55 @@ un reporte de reconciliación.
   distancia (300 m) y similitud de nombre (0.85).
 - `app/services/simulador_rutas.py`: arma rutas nuevas que recogen personas en
   paraderos existentes y terminan en la finca (Nivel2, punto del KML según
-  `destino_kml` en config). Empieza con una ruta por paradero y fusiona pares
-  (ahorros de Clarke-Wright) y reubica paraderos mientras baje el costo total de
-  buses; cada ruta debe caber en `velocidad_bus_kmh` × `tiempo_max_viaje_min`
-  incluido el tramo final. Elige bus y cantidad por costo mínimo. Costo de bus =
+  `destino_kml` en config). `simular(metodo="heuristica")` corre dos
+  construcciones y deja la más barata por finca: Clarke-Wright + reubicación y
+  voraz con tope de capacidad (el tope cambia mucho el costo: evita buses con
+  asientos vacíos). `metodo="milp"` (`optimizador_milp.py`, partición de
+  conjuntos sobre un banco de rutas con HiGHS) tarda minutos y es óptimo solo
+  sobre el banco: úsalo desde `scripts/comparar_metodos.py`, no desde la web.
+  Cada ruta debe caber en `velocidad_bus_kmh` × `tiempo_max_viaje_min` incluido
+  el tramo final (haversine, línea recta). Elige bus y cantidad por costo mínimo. Costo de bus =
   mediana REGULAR por tipo. Paraderos a más de 25 km de la finca salen como sin
   servicio. Los sectores de YARUMO se asociaron a sus puntos del KML por nombre:
   confirmar.
-- `app/api/`, `app/repository/`, `app/schemas/`: esqueletos vacíos (la API
-  FastAPI aún no existe).
+- **App web** (contrato en `docs/CONTRATO_API.md`, manda sobre el código):
+  backend FastAPI + SQLite (`app/api`, `app/db`, `app/schemas`, `app/repository`,
+  `app/core/{seguridad,errores,logging_config}.py`) y frontend Angular en
+  `frontend/` (proyecto `transporte`). Sesión por cookie `HttpOnly` con token
+  revocable (solo se guarda su SHA-256), roles `admin`/`lector`, auditoría
+  automática de crear/editar/borrar en la tabla `eventos`, logs JSON rotativos
+  en `logs/app.log`, errores con formato único y `request_id`. No hay usuario
+  por defecto: el primer admin se crea con `scripts/crear_admin.py`.
+  `app/services/importar.py` carga fincas, paraderos, personas y tipos de bus
+  desde el ETL (idempotente) y `app/services/simulacion.py` corre el simulador
+  sobre la base y guarda la corrida.
+- **Límites de los datos (leer antes de citar un ahorro):**
+  1. **Cobertura:** el ETL solo carga 473 de 1.258 filas del maestro (415 de
+     1.160 personas, 35,8 %). Las 785 restantes (sectores LAURELES 545 y
+     PAPIROS 218) tienen rutas como FACA2, MADRID4, SUBA (AER)R2 cuyos paraderos
+     no están en `Rutas_y_Paradas`; un mapeo de nombres solo recupera 72 filas.
+     Faltan paraderos con coordenadas de esas rutas.
+  2. **Red actual:** `costo_red_actual` = suma de 18 tarifas REGULAR suponiendo
+     un bus por fila. Seis rutas tienen más personas que asientos (p. ej.
+     FACATATIVA(R1) 32 vs 25), así que podrían ser varios buses por ruta: con
+     `ceil(personas/capacidad)` costaría ~8,99 M, no 6,60 M. La diferencia es
+     orientativa, no un ahorro.
+  3. **Duplicados:** 58 filas repiten identificación (54 personas, 18 con
+     paraderos distintos). `regla_duplicados` ("ultima"/"primera") cambia el
+     costo hasta 5,4 %. Hay que decidir cómo contar personas con varias asignaciones.
+  4. Un solo turno; el maestro trae turnos 1-4 que no se modelan.
 
 ## Estructura
 
 ```text
-app/core/config.py   Parámetros (pydantic-settings)
+app/core/             config (env TRANSPORTE_*), seguridad, errores, logs
 app/etl/             Excel -> tablas normalizadas -> CSV + reporte
-app/services/        distancia, orden de paradas, recorrido
-scripts/             CLIs: run_etl, build_map, mapa_rutas, cruce_fincas
-tests/               pytest
+app/services/        distancia, orden de paradas, recorrido, simulador, importar
+app/api/ db/ ...     API FastAPI, modelos SQLAlchemy, schemas, repositorios
+frontend/            Angular (standalone, sin librerías de UI)
+docs/                CONTRATO_API.md
+scripts/             CLIs: run_etl, build_map, simular_rutas, crear_admin, iniciar_app
+tests/               pytest (tests/web = API con base SQLite temporal)
 datos/               Insumos crudos (no versionado)
 data/                Salidas generadas (no versionado)
 manual/              Manuales para personas (skill estilo-documentacion)
@@ -96,6 +127,13 @@ manual/              Manuales para personas (skill estilo-documentacion)
 # Simulador: rutas nuevas con paraderos existentes, bus y cantidad por ruta
 # (velocidad y tiempo máximo en config; salida en data/simulador/):
 .\venv\Scripts\python.exe scripts\simular_rutas.py
+
+# App web: crear el primer admin (pide la clave), construir el frontend e iniciar
+# en http://127.0.0.1:8000 (API en /api, Swagger en /api/docs):
+.\venv\Scripts\python.exe scripts\crear_admin.py <usuario>
+cd frontend; npm install; npm run build; cd ..
+.\venv\Scripts\python.exe scripts\iniciar_app.py
+# Desarrollo del frontend con recarga (proxy de /api al backend): cd frontend; npm start
 
 # Mapa de rutas y fincas del KML (orden de aparición en el Excel):
 .\venv\Scripts\python.exe scripts\mapa_rutas.py [--ruta "PAPIROS"]

@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Optimización de rutas · Manual de administrador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+[hidden]{display:none!important}img{max-width:100%}
+/* Layout: sidebar índice fijo + columna de lectura; en móvil, barra superior con índice plegable.
+   Color: marca Sunshine Bouquet — turquesa #00AFAA y fucsia #E04B9B (rellenos); variantes oscuras para texto legible. */
+:root{
+  --brand:#00afaa; --brand-pink:#e04b9b;
+  --bg:#f5f9f9; --surface:#ffffff; --sunk:#e6f2f1; --line:#cfe1e0;
+  --fg:#16302f; --muted:#52706e;
+  --leaf:#00807c; --leaf-soft:#d6f1ef;
+  --rose:#b9307a; --rose-soft:#fbe5f1;
+  --warn:#8a5a00; --warn-soft:#fbf0d9;
+  --ok:#00807c; --ok-soft:#e0f4f2;
+  --code-bg:#12302f; --code-fg:#e3f3f2;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", Consolas, "Cascadia Mono", monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --brand:#2cc6c0; --brand-pink:#ec6cb0; --bg:#0e1a1a; --surface:#142424; --sunk:#1a2e2e; --line:#294443;
+    --fg:#e1f0ef; --muted:#93b4b2;
+    --leaf:#45d3cd; --leaf-soft:#123b39;
+    --rose:#f287c0; --rose-soft:#3a1a2d;
+    --warn:#e8b65a; --warn-soft:#352a14;
+    --ok:#45d3cd; --ok-soft:#133230;
+    --code-bg:#081414; --code-fg:#d9eeed;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --brand:#2cc6c0; --brand-pink:#ec6cb0; --bg:#0e1a1a; --surface:#142424; --sunk:#1a2e2e; --line:#294443;
+  --fg:#e1f0ef; --muted:#93b4b2;
+  --leaf:#45d3cd; --leaf-soft:#123b39;
+  --rose:#f287c0; --rose-soft:#3a1a2d;
+  --warn:#e8b65a; --warn-soft:#352a14;
+  --ok:#45d3cd; --ok-soft:#133230;
+  --code-bg:#081414; --code-fg:#d9eeed;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.6;margin:0}
+a{color:var(--leaf)}
+:focus-visible{outline:3px solid var(--rose);outline-offset:2px;border-radius:4px}
+
+.shell{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));gap:48px}
+
+/* Índice */
+.toc{position:sticky;top:env(safe-area-inset-top, 0px);align-self:start;max-height:100vh;overflow-y:auto;padding-block:28px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:1.25rem;line-height:1.15;margin:0 0 4px}
+.brand small{display:block;font-family:var(--f-body);font-weight:400;font-size:.85rem;color:var(--muted);margin-top:4px}
+.toc ol{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:2px}
+.toc a{display:flex;gap:10px;padding:6px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:.95rem;line-height:1.35}
+.toc a::before{content:attr(data-n);font-family:var(--f-mono);font-size:.78rem;min-width:1.6em;padding-top:2px;color:var(--muted)}
+.ver{display:inline-block;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.04em;padding:1px 6px;border-radius:5px;background:var(--warn-soft);color:var(--warn);vertical-align:2px;white-space:nowrap}
+.cmd pre .v{color:#f3b8c8;font-weight:600}
+.toc a:hover{background:var(--sunk);color:var(--fg)}
+.toc a.active{background:var(--leaf-soft);color:var(--fg);font-weight:600}
+.toc a.active::before{color:var(--leaf)}
+.mobilebar{display:none}
+.logo{display:block;aspect-ratio:720/207;background:url(img/logo_sunshine_bouquet.png) no-repeat center/contain}
+.brand .logo{width:200px;max-width:100%;margin-bottom:18px}
+.lockup{display:flex;align-items:center;gap:10px;min-width:0}
+.mobilebar .logo{width:118px;flex:none}
+
+main{padding-block:28px 80px;min-width:0}
+section{padding-top:24px;scroll-margin-top:16px}
+section + section{border-top:1px solid var(--line);margin-top:40px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(2rem,4.5vw,3rem);font-weight:800;margin:6px 0 12px;letter-spacing:-.01em}
+h2{font-size:1.75rem;font-weight:800;margin:4px 0 14px}
+h3{font-size:1.2rem;font-weight:600;margin:28px 0 8px}
+p,li{max-width:68ch}
+.lead{font-size:1.15rem;color:var(--muted);max-width:60ch}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:1px 5px;border-radius:5px}
+kbd{font-family:var(--f-mono);font-size:.85em;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+
+/* Recorrido */
+.flow{list-style:none;padding:0;margin:24px 0 8px;display:flex;flex-wrap:wrap;gap:8px 4px;align-items:center}
+.flow li{display:flex;align-items:center;gap:4px;max-width:none}
+.flow li:not(:last-child)::after{content:"→";color:var(--muted);padding:0 2px}
+.flow a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);text-decoration:none;font-weight:600;font-size:.95rem;transition:border-color .15s,background .15s}
+.flow a:hover{border-color:var(--leaf);background:var(--leaf-soft)}
+.flow a span{font-family:var(--f-mono);font-size:.75rem;color:var(--rose)}
+.flow .once a{border-style:dashed}
+.legend{font-size:.85rem;color:var(--muted)}
+
+/* Tablas */
+.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;background:var(--sunk);font-size:.85rem;letter-spacing:.02em}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+
+/* Avisos */
+.note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px 14px;border-radius:var(--radius);margin:16px 0;max-width:72ch;border:1px solid transparent}
+.note b.tag{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;height:fit-content;margin-top:3px}
+.note p{margin:0}
+.tip{background:var(--leaf-soft)} .tip b.tag{background:var(--leaf);color:var(--surface)}
+.warn{background:var(--warn-soft)} .warn b.tag{background:var(--warn);color:var(--surface)}
+.done{background:var(--surface);border-color:var(--line)} .done b.tag{background:var(--ok-soft);color:var(--ok)}
+.danger{background:var(--rose-soft)} .danger b.tag{background:var(--rose);color:var(--surface)}
+
+/* Código */
+.cmd{position:relative;margin:14px 0;max-width:100%}
+.cmd pre{margin:0;background:var(--code-bg);color:var(--code-fg);padding:14px 16px;padding-right:96px;border-radius:var(--radius);overflow-x:auto;font-family:var(--f-mono);font-size:.86rem;line-height:1.55}
+.copy{position:absolute;top:8px;right:8px;font:600 .8rem var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+.copy:hover{border-color:var(--leaf)}
+
+/* Checklists */
+.checklist{list-style:none;padding:0;margin:14px 0;display:grid;gap:6px;max-width:72ch}
+.checklist label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line);cursor:pointer;align-items:start}
+.checklist input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--leaf)}
+.checklist label:has(input:checked){background:var(--ok-soft);border-color:transparent}
+.checklist label:has(input:checked) .t{text-decoration:line-through;color:var(--muted)}
+.progress{display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--muted);margin-top:8px}
+.bar{flex:0 1 220px;height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .25s}
+.reset{font:inherit;font-size:.85rem;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0}
+
+/* Pasos de configuración */
+.steps{list-style:none;padding:0;margin:18px 0;display:grid;gap:12px;counter-reset:s}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 14px 60px;position:relative;counter-increment:s;max-width:none}
+.step::before{content:counter(s);position:absolute;left:14px;top:14px;font-family:var(--f-mono);font-weight:600;font-size:.85rem;color:var(--rose)}
+.steps-plain .step::before{content:counter(s)}
+.step h3{margin:0 0 6px;font-size:1.1rem}
+.step p{margin:6px 0}
+.path{font-family:var(--f-mono);font-size:.84rem;background:var(--sunk);padding:2px 7px;border-radius:5px;display:inline;line-height:1.9}
+.step .mark{display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--muted);margin-top:10px;cursor:pointer;width:fit-content}
+.step .mark input{accent-color:var(--leaf);width:17px;height:17px}
+.step:has(.mark input:checked){border-color:var(--leaf);background:var(--ok-soft)}
+
+/* Herramientas */
+.tool{background:var(--surface);border:1.5px solid var(--brand);border-radius:var(--radius);padding:18px;margin:18px 0;max-width:72ch}
+.tool h3{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end}
+.field{display:grid;gap:4px;font-size:.9rem;font-weight:600}
+.field input,.field select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:160px;max-width:100%}
+.result{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.result div{background:var(--sunk);border-radius:8px;padding:10px 14px;min-width:150px}
+.result b{display:block;font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.result span{font-size:.82rem;color:var(--muted)}
+.fine{font-size:.85rem;color:var(--muted);margin:10px 0 0}
+
+/* Buscador de errores */
+.search{width:100%;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg)}
+.search:focus{border-color:var(--leaf);outline:none}
+.hits{font-size:.88rem;color:var(--muted);margin:8px 0 0}
+.errors{display:grid;gap:8px;margin-top:14px}
+.err{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--brand-pink);border-radius:8px;padding:10px 14px;display:grid;gap:4px}
+.err q{font-family:var(--f-mono);font-size:.84rem;quotes:none;font-weight:600}
+.err .why{color:var(--muted);font-size:.92rem}
+.err .fix{font-size:.95rem}
+.err .fix b{color:var(--leaf)}
+.err .area{font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}
+
+details.annex{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin:12px 0}
+details.annex summary{cursor:pointer;padding:12px 16px;font-weight:700}
+details.annex > div{padding:0 16px 12px}
+
+.traps{counter-reset:tr;list-style:none;padding:0;display:grid;gap:10px}
+.traps li{counter-increment:tr;display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;max-width:72ch}
+.traps li::before{content:counter(tr);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--rose);line-height:1.2}
+
+footer{margin-top:60px;font-size:.85rem;color:var(--muted)}
+/* Capturas de pantalla: marcas numeradas en rosa; clic para ampliar */
+.shot{margin:16px 0;max-width:100%}
+.shot .zoom{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);cursor:zoom-in;overflow:hidden}
+.shot .zoom:hover{border-color:var(--leaf)}
+.shot img{display:block;width:100%;height:auto}
+.shot figcaption{font-size:.88rem;color:var(--muted);margin-top:6px;max-width:72ch}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 16px;align-items:start;margin:16px 0}
+.shots .shot{margin:0}
+.n{display:inline-grid;place-items:center;min-width:1.4em;height:1.4em;padding:0 .3em;border-radius:99px;background:#d23b8c;color:#fff;font:700 .74rem/1 var(--f-body);vertical-align:.12em}
+dialog.lb{padding:0;border:0;background:transparent;max-width:96vw;max-height:94vh}
+dialog.lb::backdrop{background:rgba(0,0,0,.78)}
+dialog.lb img{display:block;max-width:96vw;max-height:88vh;width:auto;height:auto;border-radius:8px;background:#fff}
+dialog.lb p{margin:8px 0 0;color:#fff;font-size:.9rem;text-align:center}
+dialog.lb button{position:fixed;top:12px;right:12px;font:600 .9rem var(--f-body);background:#fff;color:#16302f;border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+
+@media (max-width: 900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .toc{display:none}
+  .toc.open{display:block;position:fixed;inset:0;z-index:20;background:var(--bg);max-height:none;
+    padding:calc(64px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px))}
+  .mobilebar{display:flex;position:sticky;top:env(safe-area-inset-top, 0px);z-index:30;justify-content:space-between;align-items:center;
+    background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px;margin-inline:calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+    padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .mobilebar b{font-family:var(--f-display);font-weight:800}
+  .mobilebar button{font:600 .9rem var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:40;background:var(--bg)}
+  .step{padding-left:16px;padding-top:40px}
+}
+</style>
+</head>
+<body>
+
+<div class="shell" data-ns="rutas-administrador">
+  <nav class="toc" id="toc" aria-label="Índice">
+    <p class="brand"><span class="logo" role="img" aria-label="Sunshine Bouquet"></span>Optimización de rutas<small>Manual de administrador</small></p>
+    <ol><li><a data-n="0" href="#papel">Tu papel</a></li><li><a data-n="1" href="#requisitos">Requisitos del PC</a></li><li><a data-n="2" href="#instalar">Instalar y arrancar</a></li><li><a data-n="3" href="#usuarios">Usuarios y roles</a></li><li><a data-n="4" href="#importar">Importar los datos del Excel</a></li><li><a data-n="5" href="#editar">Editar los datos de referencia</a></li><li><a data-n="6" href="#eventos">Eventos (auditoría) y logs</a></li><li><a data-n="7" href="#copias">Copias de seguridad</a></li><li><a data-n="8" href="#trampas">Trampas silenciosas (no dan error)</a></li><li><a data-n="9" href="#problemas">Problemas comunes</a></li><li><a data-n="10" href="#anexo">Anexo técnico</a></li></ol>
+  </nav>
+  <main>
+    <div class="mobilebar"><span class="lockup"><span class="logo" role="img" aria-label="Sunshine Bouquet"></span><b>Optimización de rutas</b></span><button type="button" id="tocBtn" aria-expanded="false" aria-controls="toc">Índice</button></div>
+<section id="papel"><p class="eyebrow">Manual de administrador · Sección 0</p>
+<h1>Instalar, cuidar y mantener la app de rutas</h1>
+<p class="lead">La aplicación simula rutas de transporte de personal nuevas (qué paraderos recoge cada bus, qué bus conviene y cuánto costaría) y las compara con la red actual. Tú la dejas lista para que otros la usen.</p>
+<div class="note tip"><b class="tag">Ojo</b><p>Este manual es para quien <b>instala, crea usuarios y carga datos</b>. Usar el simulador día a día no tiene manual propio todavía; cambiar el algoritmo se explica en <code>AGENTS.md</code>.</p></div>
+<h3>Tu papel</h3><ol><li><b>Instalas y arrancas</b> la aplicación en un PC.</li><li><b>Gestionas usuarios</b>: quién entra y si solo mira (lector) o también edita (administrador).</li><li><b>Mantienes los datos de referencia</b>: personas, paraderos, fincas y tipos de bus (el costo del bus es la palanca principal del simulador).</li></ol>
+<h3>Tu trabajo en 5 pasos</h3>
+<ol class="flow" aria-label="Tu trabajo"><li><a href="#instalar"><span>1</span>Instalar</a></li><li><a href="#instalar"><span>2</span>Crear el primer admin</a></li><li><a href="#importar"><span>3</span>Importar el Excel</a></li><li><a href="#editar"><span>4</span>Revisar y ajustar datos</a></li><li><a href="#copias"><span>5</span>Copiar la base</a></li></ol>
+<p class="legend">Pulsa una etapa para ir a ella.</p>
+<h3>Palabras que vas a ver</h3>
+<div class="tbl"><table><thead><tr><th>Palabra</th><th>Qué significa</th></tr></thead><tbody><tr><td>Lector</td><td>Usuario que puede ver datos y correr simulaciones, pero no cambiar nada.</td></tr><tr><td>Administrador</td><td>Usuario que además edita datos, importa y ve Usuarios y Eventos.</td></tr><tr><td>Paradero</td><td>Punto físico donde sube la gente (nombre + coordenadas).</td></tr><tr><td>Finca</td><td>Destino de la ruta; su punto sale del archivo KML.</td></tr><tr><td>Corrida</td><td>Resultado guardado de una simulación. No cambia aunque luego edites datos.</td></tr><tr><td>Importar</td><td>Leer los Excel/KML locales y crear en la base lo que falte.</td></tr><tr><td>Auditoría / Eventos</td><td>Libro donde queda anotado quién hizo qué y cuándo.</td></tr><tr><td>Haversine</td><td>Distancia en línea recta sobre la Tierra (no por carretera).</td></tr></tbody></table></div></section>
+<section id="requisitos"><p class="eyebrow">Sección 1</p><h2>Requisitos del PC</h2><p>Marca cada punto. La página recuerda lo que marcas en este navegador.</p><ul class="checklist" data-list="antes"><li><label><input type="checkbox" id="antes-1"><span class="t">Windows con <b>Python 3.14</b> (el entorno del proyecto usa <code>venv</code>).</span></label></li><li><label><input type="checkbox" id="antes-2"><span class="t"><b>Node.js</b> solo si vas a reconstruir el frontend (<code>npm run build</code>). Si ya existe <code>frontend\dist\transporte\browser</code>, no hace falta para solo usar la app.</span></label></li><li><label><input type="checkbox" id="antes-3"><span class="t">Los archivos de datos en la carpeta <code>datos\</code>: <code>info de rutas a 19-09-2026.xlsx</code>, <code>rutas y paradas con posicion.xlsx</code> y <code>fincas_sunshine.kml</code>.</span></label></li><li><label><input type="checkbox" id="antes-4"><span class="t">Un navegador moderno (Edge, Chrome).</span></label></li></ul><div class="progress" data-progress="antes"><div class="bar"><i></i></div><span>0 de 4</span><button class="reset" type="button" data-reset="antes">Desmarcar todo</button></div><div class="note tip"><b class="tag">Tip</b><p>La app solo escucha en <code>127.0.0.1</code>: se usa desde el mismo PC donde corre. No se ve desde otros equipos de la red.</p></div></section>
+<section id="instalar"><p class="eyebrow">Sección 2</p><h2>Instalar y arrancar</h2><p>Todos los comandos se escriben en PowerShell, dentro de la carpeta del proyecto.</p><ol class="steps steps-plain" data-list="inst"><li class="step"><h3>Crea el entorno virtual (una sola vez)</h3><div class="cmd"><pre>python -m venv venv</pre></div><label class="mark"><input type="checkbox" id="inst-1">Hecho</label></li><li class="step"><h3>Instala las dependencias</h3><div class="cmd"><pre>.\venv\Scripts\python.exe -m pip install -r requirements.txt</pre></div><label class="mark"><input type="checkbox" id="inst-2">Hecho</label></li><li class="step"><h3>Construye el frontend (necesita Node)</h3><div class="cmd"><pre>cd frontend; npm install; npm run build; cd ..</pre></div><label class="mark"><input type="checkbox" id="inst-3">Hecho</label></li><li class="step"><h3>Crea el primer administrador</h3><p>Pide la clave dos veces; no se ve al escribir. Opciones: <code>--nombre "Nombre"</code> y <code>--rol admin|lector</code> (por defecto <code>admin</code>).</p><div class="cmd"><pre>.\venv\Scripts\python.exe scripts\crear_admin.py &lt;usuario&gt;</pre></div><label class="mark"><input type="checkbox" id="inst-4">Hecho</label></li><li class="step"><h3>Inicia la aplicación</h3><p>Deja esa ventana abierta: es el motor. Para otro puerto: <code>--puerto 8001</code>.</p><div class="cmd"><pre>.\venv\Scripts\python.exe scripts\iniciar_app.py</pre></div><label class="mark"><input type="checkbox" id="inst-5">Hecho</label></li><li class="step"><h3>Entra</h3><p>Abre <code>http://127.0.0.1:8000</code> e ingresa con el usuario y la contraseña del paso 4.</p><!-- CAPTURA PENDIENTE: pantalla de login (img/instalar-login.webp). Marcas: 1 campo Usuario, 2 campo Contraseña, 3 botón de ingresar. --><p class="fine">(captura pendiente)</p><label class="mark"><input type="checkbox" id="inst-6">Hecho</label></li></ol><div class="progress" data-progress="inst"><div class="bar"><i></i></div><span>0 de 6</span><button class="reset" type="button" data-reset="inst">Empezar de nuevo</button></div><div class="note done"><b class="tag">Listo</b><p>Cuando ves la pantalla <b>Inicio</b> con tu nombre («Hola, …») y el menú lateral. Para apagar, vuelve a la ventana negra y pulsa <kbd>Ctrl</kbd> + <kbd>C</kbd>.</p></div><div class="note warn"><b class="tag">Cuidado</b><p>No hay usuario por defecto. Sin el paso 4 nadie puede entrar.</p></div><h3>Dónde queda todo</h3><div class="tbl"><table><thead><tr><th>Qué</th><th>Dónde</th></tr></thead><tbody><tr><td>Base de datos (usuarios, personas, corridas…)</td><td><code>data\app.db</code> (se crea sola al arrancar o al crear el admin)</td></tr><tr><td>Logs</td><td><code>logs\app.log</code></td></tr><tr><td>Frontend construido</td><td><code>frontend\dist\transporte\browser</code></td></tr></tbody></table></div><p>Si la carpeta del frontend no existe, la API funciona pero la página principal no se muestra: repite el paso 3.</p></section>
+<section id="usuarios"><p class="eyebrow">Sección 3</p><h2>Usuarios y roles</h2><p>Menú <span class="path">Usuarios</span> (solo administradores).</p><div class="tbl"><table><thead><tr><th>Rol</th><th>Puede</th></tr></thead><tbody><tr><td>Lector</td><td>Ver todos los datos, ejecutar el simulador, ver corridas.</td></tr><tr><td>Administrador</td><td>Todo lo anterior + crear/editar/borrar datos, importar, Usuarios y Eventos.</td></tr></tbody></table></div><h3>Crear un usuario</h3><p><span class="path">Usuarios → Nuevo</span>; llena Usuario, Nombre, Rol, Contraseña y pulsa <b>Guardar</b>.</p><!-- CAPTURA PENDIENTE: formulario Nuevo de Usuarios (img/usuarios-nuevo.webp). Marcas: 1 Usuario, 2 Rol, 3 Contraseña, 4 Guardar. --><p class="fine">(captura pendiente)</p><ul><li>El usuario va en minúsculas, de 3 a 40 caracteres: letras, números, <code>.</code>, <code>_</code>, <code>-</code>.</li><li>La contraseña: al menos 10 caracteres y no simple (no <code>123456…</code>, <code>abcdef…</code>, ni 3 o menos caracteres distintos).</li></ul><h3>Cambiar la clave de alguien</h3><p><b>Editar</b> en su fila, escribe la nueva contraseña y <b>Guardar</b>. Si la dejas vacía, no cambia.</p><h3>Desactivar</h3><p><b>Editar</b>, quita la casilla <b>Activo</b> y <b>Guardar</b>. Los usuarios no se borran (queda su historial).</p><div class="note warn"><b class="tag">Cuidado</b><p>No se puede desactivar ni degradar al último administrador activo: la app responde <i>«No se puede desactivar ni degradar al último administrador activo.»</i> Crea otro admin primero.</p></div><h3>Bloqueo de login</h3><p>Tras 5 intentos fallidos el usuario espera 1 minuto; luego 2, 4… hasta 15 minutos. Además hay un límite por IP. Si pasan 60 minutos sin fallos, el contador se reinicia. Aplica igual a usuarios que no existen (así no se revela quién existe).</p><p>También puedes crear usuarios desde la consola con <code>crear_admin.py &lt;usuario&gt; --rol lector</code>.</p></section>
+<section id="importar"><p class="eyebrow">Sección 4</p><h2>Importar los datos del Excel</h2><p>Menú <span class="path">Importar</span> (solo administradores). Lee los archivos de <code>datos\</code> en el PC servidor.</p><ol class="steps steps-plain" data-list="imp"><li class="step"><p>Ve a <span class="path">Importar</span>.</p><label class="mark"><input type="checkbox" id="imp-1">Hecho</label></li><li class="step"><p>Deja desmarcado <b>Sobrescribir registros existentes</b> (lo normal).</p><label class="mark"><input type="checkbox" id="imp-2">Hecho</label></li><li class="step"><p>Pulsa <b>Importar datos del Excel local</b> y, en <i>Confirmar importación</i>, <b>Importar</b>. Espera: <i>«Importando, puede tardar unos segundos…»</i>.</p><!-- CAPTURA PENDIENTE: pantalla Importar con resultado (img/importar-resultado.webp). Marcas: 1 casilla Sobrescribir, 2 botón Importar datos del Excel local, 3 bloque Avisos, 4 tabla Resultado. --><p class="fine">(captura pendiente)</p><label class="mark"><input type="checkbox" id="imp-3">Hecho</label></li></ol><div class="progress" data-progress="imp"><div class="bar"><i></i></div><span>0 de 3</span><button class="reset" type="button" data-reset="imp">Empezar de nuevo</button></div><div class="note done"><b class="tag">Listo</b><p>Cuando aparece <b>Resultado</b> con la tabla Fincas / Paraderos / Personas / Tipos de bus (columnas Creadas y Actualizadas).</p></div><h3>Qué hace</h3><div class="tbl"><table><thead><tr><th>Recurso</th><th>Cómo se empareja / qué crea</th></tr></thead><tbody><tr><td>Fincas</td><td>Por código <code>cod_nivel2</code>; el punto sale del KML.</td></tr><tr><td>Paraderos</td><td>Únicos por nombre + latitud + longitud (6 decimales); solo los que tienen personas.</td></tr><tr><td>Personas</td><td>Por identificación; si se repite, rige <code>regla_duplicados</code> (<code>ultima</code> por defecto, o <code>primera</code>).</td></tr><tr><td>Tipos de bus</td><td>Costo = mediana de la tarifa REGULAR por tipo.</td></tr></tbody></table></div><p>También guarda tres parámetros: <code>costo_red_actual</code> (suma de tarifas REGULAR), <code>maestro_personas_total</code> y <code>maestro_personas_simuladas</code>.</p><p><b>No pisa tus ediciones.</b> Importar es repetible: crea lo que falta y deja lo existente como está. Solo con <b>Sobrescribir registros existentes</b> se reemplazan los datos con los del Excel, y se pierden las ediciones hechas en la aplicación. La pantalla pide confirmar y lo advierte («Modo: sobrescribir existentes.»).</p><div class="note warn"><b class="tag">Cuidado</b><p>Haz una copia de <code>data\app.db</code> (sección 7) antes de sobrescribir.</p></div><h3>Qué significan los avisos</h3><div class="tbl"><table><thead><tr><th>Aviso (resumido)</th><th>Qué significa</th></tr></thead><tbody><tr><td><i>«El ETL registró N observaciones de reconciliación (ver data/reporte_reconciliacion.md).»</i></td><td>Hay diferencias entre las fuentes; el detalle está en ese reporte.</td></tr><tr><td><i>«La finca '…' no tiene punto en el KML: no se importó ni sus personas.»</i></td><td>Falta el destino de esa finca en <code>destino_kml</code>/KML. Sus personas no entran.</td></tr><tr><td><i>«Ya existe una finca '…' con otro código: no se importó la del Excel.»</i></td><td>Una finca con ese nombre ya existe con otro código.</td></tr><tr><td><i>«N paradas con personas no tienen coordenadas: esas personas quedan sin paradero.»</i></td><td>Se importan, pero no se pueden simular.</td></tr><tr><td><i>«N filas repiten la identificación de otra persona (M personas tienen paraderos distintos); se usó la regla …»</i></td><td>Ver trampa 3.</td></tr><tr><td><i>«N personas no se importaron por no tener finca con punto en el KML.»</i></td><td>Sin finca válida no hay persona.</td></tr><tr><td><i>«N registros difieren del Excel y no se modificaron (usa sobrescribir=true para reemplazarlos).»</i></td><td>Ediciones tuyas que se respetaron. Es normal si editaste.</td></tr></tbody></table></div></section>
+<section id="editar"><p class="eyebrow">Sección 5</p><h2>Editar los datos de referencia</h2><p>Menús <span class="path">Personas</span>, <span class="path">Paraderos</span>, <span class="path">Fincas</span> y <span class="path">Tipos de bus</span>. En todos: <b>Nuevo</b> para crear, <b>Editar</b> y <b>Borrar</b> en cada fila (el borrado pide <i>«¿Borrar este registro? Esta acción no se puede deshacer.»</i>), y buscador con <b>Buscar</b>.</p><div class="tbl"><table><thead><tr><th>Menú</th><th>Campos</th><th>Reglas</th></tr></thead><tbody><tr><td>Personas</td><td>identificación, nombre, paradero, finca, activo</td><td>identificación única; la finca debe existir</td></tr><tr><td>Paraderos</td><td>nombre, latitud, longitud, activo</td><td>latitud -90 a 90, longitud -180 a 180; no se borra si tiene personas</td></tr><tr><td>Fincas</td><td>nombre, código nivel2, latitud, longitud, activo</td><td>nombre único; no se borra si tiene personas</td></tr><tr><td>Tipos de bus</td><td><b>Tipo</b>, <b>Capacidad (mayor a 0)</b>, <b>Costo (0 o más)</b>, activo</td><td>tipo único</td></tr></tbody></table></div><div class="note tip"><b class="tag">Tip</b><p>Si algo tiene registros asociados, <b>desactívalo</b> (quita <b>Activo</b>) en vez de borrarlo. El simulador usa solo registros activos.</p></div><p><b>El costo del bus es la palanca principal del simulador:</b> elige bus y cantidad por costo mínimo. Cambiar <b>Costo</b> o <b>Capacidad</b> de un tipo cambia qué rutas conviene armar y el costo total. Las corridas ya guardadas no cambian (son inmutables: guardan una foto de sus paraderos y finca).</p><p>Si importas con <i>sobrescribir</i>, el costo vuelve a la mediana del Excel.</p></section>
+<section id="eventos"><p class="eyebrow">Sección 6</p><h2>Eventos (auditoría) y logs</h2><p><span class="path">Eventos</span> (solo admin) lista quién hizo qué. Columnas: <b>Fecha</b>, <b>Usuario</b>, <b>Acción</b>, <b>Entidad</b>, <b>Id</b>, <b>Detalle</b>. Filtros: <b>Acción</b>, <b>Usuario</b>, <b>Entidad</b>, <b>Desde</b>, <b>Hasta</b> y <b>Filtrar</b>. Fechas en UTC.</p><div class="tbl"><table><thead><tr><th>Acción</th><th>Cuándo se registra</th></tr></thead><tbody><tr><td><code>login</code>, <code>login_fallido</code>, <code>logout</code></td><td>Entradas, fallos y salidas (los fallos de usuarios inexistentes solo van al log de archivo)</td></tr><tr><td><code>crear</code>, <code>editar</code>, <code>borrar</code></td><td>Cambios de datos; el Detalle muestra antes → después, sin claves</td></tr><tr><td><code>importar</code></td><td>Cada importación</td></tr><tr><td><code>simular</code></td><td>Cada simulación</td></tr></tbody></table></div><p>Cómo leerlo: filtra por <b>Entidad</b> (p. ej. <code>tipo_bus</code>) para ver quién cambió un costo, y mira el <b>Detalle</b> para el antes y después. Los usuarios creados con el script aparecen con usuario <code>(script)</code>.</p><!-- CAPTURA PENDIENTE: pantalla Eventos (img/eventos-lista.webp). Marcas: 1 filtro Acción, 2 filtros Desde/Hasta, 3 botón Filtrar, 4 columna Detalle. --><p class="fine">(captura pendiente)</p><h3>Logs</h3><p><code>logs\app.log</code>: una línea JSON por evento con <code>fecha, nivel, mensaje, request_id, usuario, metodo, ruta, estado, ms</code>. Rota sola (5 archivos de 2 MB). Cuando alguien ve un error, el <code>request_id</code> (también en la cabecera <code>X-Request-ID</code>) te lleva a la línea exacta. Para ver el final:</p><div class="cmd"><pre>Get-Content logs\app.log -Tail 30</pre></div></section>
+<section id="copias"><p class="eyebrow">Sección 7</p><h2>Copias de seguridad</h2><p>Todo lo que se edita vive en un solo archivo: <code>data\app.db</code>.</p><ol class="steps steps-plain" data-list="copia"><li class="step"><p>Apaga la app (<kbd>Ctrl</kbd> + <kbd>C</kbd> en la ventana negra).</p><label class="mark"><input type="checkbox" id="copia-1">Hecho</label></li><li class="step"><p>Copia <code>data\app.db</code> a un lugar seguro con fecha, p. ej. <code>app_2026-10-26.db</code>.</p><label class="mark"><input type="checkbox" id="copia-2">Hecho</label></li><li class="step"><p>Vuelve a iniciar la app.</p><label class="mark"><input type="checkbox" id="copia-3">Hecho</label></li></ol><div class="progress" data-progress="copia"><div class="bar"><i></i></div><span>0 de 3</span><button class="reset" type="button" data-reset="copia">Empezar de nuevo</button></div><p>Para restaurar: con la app apagada, reemplaza <code>data\app.db</code> por la copia.</p><div class="note warn"><b class="tag">Cuidado</b><p>No copies el archivo con la app encendida: puede quedar a medias.</p></div><p>Los Excel y KML de <code>datos\</code> no se editan a mano ni se versionan; guárdalos aparte.</p></section>
+<section id="trampas"><p class="eyebrow">Sección 8</p><h2>Trampas silenciosas (no dan error)</h2><ol class="traps"><li><p><b>La red actual supone un bus por fila de tarifa.</b> <code>costo_red_actual</code> suma las tarifas REGULAR asumiendo un bus por fila; no está confirmado con el proveedor. La comparación (<code>diferencia_pct</code>) es <b>orientativa</b>; la pantalla lo dice en las advertencias. No la presentes como ahorro cierto.</p></li><li><p><b>El ETL descarta filas que no cruzan con el catálogo de rutas.</b> Hoy 785 de 1.258 filas del maestro se pierden, y solo 415 de 1.160 personas se simulan. Los sectores Laureles y Papiros casi no tienen datos. Detéctalo en <code>maestro_personas_total</code> y <code>maestro_personas_simuladas</code> y en el aviso del ETL. Un resultado «bueno» puede cubrir poca gente.</p></li><li><p><b>Identificaciones repetidas.</b> 58 filas repiten la identificación de otra persona. La importación deja una fila por persona según <code>regla_duplicados</code> (<code>ultima</code> por defecto); las otras asignaciones se pierden sin más aviso que el contador.</p></li><li><p><b>Destinos de los sectores asociados al KML por nombre.</b> YARUMO, LAURELES y PAPIROS se emparejan por nombre (<code>destino_kml</code> en <code>app/core/config.py</code>). Por confirmar: si el punto fuera otro, los costos cambiarían sin error.</p></li><li><p><b>Distancia haversine.</b> Es línea recta, no carretera: los kilómetros y minutos son menores a los reales.</p></li><li><p><b>Un solo turno.</b> Cada persona se simula en un único turno; no se reparten buses entre turnos.</p></li><li><p><b>Importar no actualiza lo ya existente.</b> Si el Excel cambia un costo y ya existe el tipo de bus, no se refleja (aviso «registros difieren…») salvo con sobrescribir.</p></li><li><p><b>Solo registros activos.</b> Una persona, paradero o finca desactivado desaparece de la simulación sin aviso.</p></li></ol></section>
+<section id="problemas"><p class="eyebrow">Sección 9</p><h2>Problemas comunes</h2><p>Escribe o pega el mensaje que ves, o una palabra clave.</p><label for="q" class="field">Buscar un error</label><input id="q" class="search" type="search" placeholder="Ej.: Usuario o clave incorrectos" autocomplete="off" data-empty="No encontré ese mensaje. Prueba con una o dos palabras clave. Si no aparece, copia el mensaje y avisa a desarrollo."><p class="hits" id="hits" aria-live="polite"></p><div class="errors" id="errors"></div><div class="note tip"><b class="tag">Tip</b><p>Avisa a desarrollo (con el mensaje exacto o una captura, <kbd>Win</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>) si aparece un error 500, si la base no abre o si los números de una corrida parecen imposibles.</p></div></section>
+<section id="anexo"><p class="eyebrow">Sección 10</p><h2>Anexo técnico</h2><details class="annex"><summary>Variables de entorno</summary><div><p>Prefijo <code>TRANSPORTE_</code>, definidas en <code>app/core/config.py</code>.</p><div class="tbl"><table><thead><tr><th>Variable</th><th>Defecto</th><th>Para qué</th></tr></thead><tbody><tr><td><code>TRANSPORTE_DB_URL</code></td><td><code>sqlite:///data/app.db</code></td><td>Base de datos</td></tr><tr><td><code>TRANSPORTE_LOGS_DIR</code></td><td><code>logs</code></td><td>Carpeta de logs</td></tr><tr><td><code>TRANSPORTE_PUERTO</code></td><td>8000</td><td>Puerto (el script usa <code>--puerto</code>)</td></tr><tr><td><code>TRANSPORTE_SESION_HORAS</code></td><td>12</td><td>Duración de la sesión</td></tr><tr><td><code>TRANSPORTE_MAX_INTENTOS</code> / <code>BLOQUEO_MIN</code> / <code>BLOQUEO_MAX_MIN</code></td><td>5 / 1 / 15</td><td>Bloqueo de login</td></tr><tr><td><code>TRANSPORTE_CLAVE_MIN_LARGO</code></td><td>10</td><td>Largo mínimo de clave</td></tr><tr><td><code>TRANSPORTE_REGLA_DUPLICADOS</code></td><td><code>ultima</code></td><td><code>ultima</code> o <code>primera</code></td></tr><tr><td><code>TRANSPORTE_VELOCIDAD_BUS_KMH</code> / <code>TIEMPO_MAX_VIAJE_MIN</code></td><td>25 / 60</td><td>Parámetros del simulador</td></tr><tr><td><code>TRANSPORTE_DOCS</code></td><td>0</td><td><code>1</code> activa Swagger en <code>/api/docs</code></td></tr><tr><td><code>TRANSPORTE_HOSTS_PERMITIDOS</code> / <code>ORIGENES_PERMITIDOS</code></td><td>localhost…</td><td>Hosts y orígenes aceptados</td></tr></tbody></table></div></div></details><details class="annex"><summary>Endpoints</summary><div><p>Detalle en <code>docs/CONTRATO_API.md</code>: <code>/api/auth/{login,logout,yo}</code>, <code>/api/{fincas,paraderos,personas,tipos-bus,usuarios}</code> (CRUD), <code>POST /api/importar/datos-locales[?sobrescribir=true]</code>, <code>POST /api/simulador/ejecutar</code>, <code>/api/corridas</code>, <code>GET /api/eventos</code>, <code>GET /api/salud</code>.</p></div></details><details class="annex"><summary>Carpetas</summary><div><p><code>app/</code> (backend), <code>frontend/</code> (Angular), <code>scripts/</code>, <code>tests/</code>, <code>datos/</code> (insumos), <code>data/</code> (salidas y <code>app.db</code>), <code>logs/</code>, <code>docs/</code>, <code>manual/</code>.</p></div></details><details class="annex"><summary>Pruebas e historial</summary><div><div class="cmd"><pre>.\venv\Scripts\python.exe -m pytest -q</pre></div><p>Historial: 2026-10-26, primera versión.</p></div></details></section>
+    <footer>Sunshine Bouquet · Optimización de rutas · manual de administrador · revisión 26-10-2026.</footer>
+  </main>
+</div>
+
+<script>
+// Errores conocidos: [área, mensaje literal (sacado del código), causa, qué hacer]
+window.ERR = [["Entrar", "Ingresa tu usuario y tu contraseña.", "Falta un campo en el login.", "Llena ambos."], ["Entrar", "Usuario o clave incorrectos.", "Dato mal escrito (o usuario inexistente; no se distingue).", "Revisa; si olvidó la clave, edítala en Usuarios."], ["Entrar", "Demasiados intentos fallidos. Intenta de nuevo en …", "Bloqueo progresivo.", "Espera el tiempo indicado (máx. 15 min)."], ["Entrar", "Tu sesión no es válida o venció. Inicia sesión de nuevo.", "La sesión dura 12 horas o fue revocada.", "Entra de nuevo."], ["Permisos", "Solo un administrador puede hacer esto.", "Un lector intentó escribir.", "Cambia su rol en Usuarios si corresponde."], ["Permisos", "Origen de la solicitud no permitido.", "La petición viene de otra dirección.", "Abre la app en http://127.0.0.1:8000 o localhost."], ["Usuarios", "Ya existe un usuario con ese nombre de usuario.", "Nombre repetido (sin distinguir mayúsculas).", "Usa otro."], ["Usuarios", "No se puede desactivar ni degradar al último administrador activo.", "Quedarías sin admin.", "Crea otro admin antes."], ["Datos", "No se puede borrar …: tiene registros asociados. Desactívalo en su lugar.", "Hay personas ligadas.", "Quita la casilla Activo."], ["Datos", "Ya existe … con los mismos datos (…).", "Duplicado único.", "Edita el existente."], ["Importar", "Faltan archivos de datos en …: ….", "La carpeta datos\\ está incompleta.", "Copia los Excel y el KML (sección 1)."], ["Simulador", "No hay tipos de bus activos: crea o activa al menos uno.", "El simulador no tiene buses.", "Activa uno en Tipos de bus."], ["Simulador", "No hay personas activas con finca activa para simular.", "Todo desactivado o sin importar.", "Importa o activa datos."], ["Simulador", "Ninguna persona activa tiene un paradero activo asignado.", "Las personas no tienen paradero.", "Revisa los avisos de importación."], ["Script", "Usuario no válido: 3 a 40 caracteres …", "Nombre fuera de reglas.", "Corrígelo."], ["Script", "Las claves no coinciden. / La clave debe tener entre 10 y 200 caracteres. / La clave es demasiado simple: …", "Contraseña no válida.", "Usa otra más larga y variada."], ["Script", "Ya existe el usuario '…'.", "Ya fue creado.", "Entra con él o usa otro nombre."], ["Arranque", "Pantalla en blanco o 404 en /", "No se construyó el frontend.", "Repite npm run build en la carpeta frontend."], ["Arranque", "Error 500 / mensaje genérico", "Falla interna.", "Busca su request_id en logs\\app.log y avisa a desarrollo."]];
+(function(){
+  var shell = document.querySelector(".shell");
+  var NS = (shell && shell.dataset.ns) || "cr";
+  var store = {
+    get: function(k){ try { return JSON.parse(localStorage.getItem(NS + ":" + k)); } catch(e){ return null; } },
+    set: function(k, v){ try { localStorage.setItem(NS + ":" + k, JSON.stringify(v)); } catch(e){} }
+  };
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Botones de copiar
+  document.querySelectorAll(".cmd").forEach(function(box){
+    var pre = box.querySelector("pre");
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "copy"; b.textContent = "Copiar";
+    b.addEventListener("click", function(){
+      var text = pre.textContent;
+      var done = function(){ b.textContent = "Copiado"; setTimeout(function(){ b.textContent = "Copiar"; }, 1500); };
+      var fallback = function(){
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        b.textContent = "Pulsa Ctrl+C";
+        setTimeout(function(){ b.textContent = "Copiar"; }, 2500);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+        else fallback();
+      } catch(e){ fallback(); }
+    });
+    box.appendChild(b);
+  });
+
+  // Checklists con progreso. Las listas con data-por-finca se guardan por finca.
+  function fincaCode(){ var i = $("fFinca"); return (i && i.value.trim().toLowerCase().replace(/\s+/g, "")) || "general"; }
+  function listEl(name){ return document.querySelector('[data-list="' + name + '"]'); }
+  function key(name){ var l = listEl(name); return l && l.hasAttribute("data-por-finca") ? name + ":" + fincaCode() : name; }
+  function boxes(name){ return Array.from(document.querySelectorAll('[data-list="' + name + '"] input[type=checkbox]')); }
+  function paint(name){
+    var bs = boxes(name), n = bs.filter(function(b){ return b.checked; }).length;
+    var p = document.querySelector('[data-progress="' + name + '"]');
+    if (!p) return;
+    p.querySelector("i").style.width = (bs.length ? n / bs.length * 100 : 0) + "%";
+    p.querySelector("span").textContent = n + " de " + bs.length + (n === bs.length ? " · completo" : "");
+  }
+  function load(name){
+    var saved = store.get(key(name)) || {};
+    boxes(name).forEach(function(b){ b.checked = !!saved[b.id]; });
+    paint(name);
+  }
+  var names = Array.from(new Set(Array.from(document.querySelectorAll("[data-list]")).map(function(el){ return el.dataset.list; })));
+  names.forEach(function(name){
+    boxes(name).forEach(function(b){
+      b.addEventListener("change", function(){
+        var s = store.get(key(name)) || {}; s[b.id] = b.checked; store.set(key(name), s); paint(name);
+      });
+    });
+  });
+  document.querySelectorAll("[data-reset]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var name = btn.dataset.reset;
+      boxes(name).forEach(function(b){ b.checked = false; });
+      store.set(key(name), {}); paint(name);
+    });
+  });
+
+  names.forEach(load);
+
+  // Buscador de errores (datos en window.ERR: [área, mensaje, causa, solución])
+  var q = $("q");
+  if (q && window.ERR){
+    var norm = function(s){ return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); };
+    var STOP = new Set("el la los las de del un una y o a en que se no es por con para al su lo x".split(" "));
+    var sig = function(s){ return s.split(" ").filter(function(w){ return w.length > 2 && !STOP.has(w); }); };
+    var rows = window.ERR.map(function(e){ return { e: e, hay: norm(e.join(" ")), msg: sig(norm(e[1])) }; });
+    var list = $("errors"), hits = $("hits");
+    var el = function(tag, cls, text){ var n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+    var render = function(){
+      var raw = norm(q.value), words = sig(raw);
+      var shown = rows.map(function(r){
+        if (!words.length) return { r: r, s: 1 };
+        var hit = words.filter(function(w){ return r.hay.indexOf(w) >= 0; }).length;
+        var inQ = r.msg.filter(function(w){ return raw.indexOf(w) >= 0; }).length;
+        return { r: r, s: Math.max(hit / words.length, r.msg.length ? inQ / r.msg.length : 0) };
+      }).filter(function(x){ return x.s >= (words.length ? 0.5 : 0); })
+        .sort(function(a, b){ return b.s - a.s; });
+      list.textContent = "";
+      shown.forEach(function(x){
+        var e = x.r.e, card = el("div", "err");
+        card.appendChild(el("span", "area", e[0]));
+        card.appendChild(el("q", null, e[1]));
+        card.appendChild(el("span", "why", e[2]));
+        var fix = el("span", "fix"); fix.appendChild(el("b", null, "Qué hacer: ")); fix.appendChild(document.createTextNode(e[3]));
+        card.appendChild(fix);
+        list.appendChild(card);
+      });
+      if (!shown.length) list.appendChild(el("div", "empty", q.dataset.empty || "No encontré ese mensaje. Prueba con una o dos palabras clave."));
+      hits.textContent = words.length ? shown.length + " resultado" + (shown.length === 1 ? "" : "s") : "Mostrando los " + rows.length + " problemas conocidos.";
+    };
+    q.addEventListener("input", render); render();
+  }
+
+  // Índice: sección activa y menú móvil
+  var links = Array.from(document.querySelectorAll(".toc a"));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting && byId[en.target.id]){
+          links.forEach(function(a){ a.classList.remove("active"); });
+          byId[en.target.id].classList.add("active");
+        }
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    document.querySelectorAll("main section[id]").forEach(function(s){ io.observe(s); });
+  }
+  var toc = $("toc"), btn = $("tocBtn");
+  var close = function(){ toc.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); btn.textContent = "Índice"; };
+  btn.addEventListener("click", function(){
+    var open = toc.classList.toggle("open");
+    btn.setAttribute("aria-expanded", open); btn.textContent = open ? "Cerrar" : "Índice";
+  });
+  links.forEach(function(a){ a.addEventListener("click", function(){ if (toc.classList.contains("open")) close(); }); });
+})();
+
+
+</script>
+
+<script>
+// Capturas: clic para ver en grande; Esc o clic fuera para cerrar.
+(function(){
+  var dlg = document.createElement("dialog");
+  dlg.className = "lb";
+  dlg.setAttribute("aria-label", "Captura ampliada");
+  dlg.innerHTML = '<button type="button">Cerrar</button><img alt=""><p></p>';
+  document.body.appendChild(dlg);
+  var img = dlg.querySelector("img"), cap = dlg.querySelector("p");
+  document.addEventListener("click", function(e){
+    var b = e.target.closest && e.target.closest(".shot .zoom");
+    if (!b) return;
+    var src = b.querySelector("img");
+    img.src = src.src; img.alt = src.alt;
+    var fc = b.parentNode.querySelector("figcaption");
+    cap.textContent = fc ? fc.textContent : "";
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  });
+  dlg.addEventListener("click", function(e){ if (e.target === dlg || e.target.tagName === "BUTTON" || e.target === img) dlg.close(); });
+})();
+</script>
+</body>
+</html>
