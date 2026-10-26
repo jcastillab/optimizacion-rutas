@@ -52,9 +52,10 @@ un reporte de reconciliación.
   distancia (300 m) y similitud de nombre (0.85).
 - `app/services/simulador_rutas.py`: arma rutas nuevas que recogen personas en
   paraderos existentes y terminan en la finca (Nivel2, punto del KML según
-  `destino_kml` en config). Semilla = más personas; crece hacia la más cercana
-  mientras paraderos + tramo final quepan en `velocidad_bus_kmh` ×
-  `tiempo_max_viaje_min`. Elige bus y cantidad por costo mínimo. Costo de bus =
+  `destino_kml` en config). Empieza con una ruta por paradero y fusiona pares
+  (ahorros de Clarke-Wright) y reubica paraderos mientras baje el costo total de
+  buses; cada ruta debe caber en `velocidad_bus_kmh` × `tiempo_max_viaje_min`
+  incluido el tramo final. Elige bus y cantidad por costo mínimo. Costo de bus =
   mediana REGULAR por tipo. Paraderos a más de 25 km de la finca salen como sin
   servicio. Los sectores de YARUMO se asociaron a sus puntos del KML por nombre:
   confirmar.

@@ -65,7 +65,7 @@ def test_elegir_bus_minimiza_costo_total_no_el_bus_mas_grande():
 def test_construir_rutas_asigna_cada_parada_una_vez_o_la_marca_sin_servicio():
     # Paradas cerca de la finca y una lejana (fuera de 25 km): esa queda sin servicio.
     dem = _dem([(i, 5, 4.70, -74.10 - i * 0.02) for i in range(1, 9)] + [(99, 5, 5.2, -74.1)])
-    rutas, sin = construir_rutas(dem, FINCA, 25.0, 60.0)
+    rutas, sin = construir_rutas(dem, FINCA, 25.0, 60.0, BUSES)
     asignadas = [p for ruta, _ in rutas for p in ruta]
     assert sorted(asignadas + sin) == sorted(dem["parada_id"])
     assert len(asignadas) == len(set(asignadas))
@@ -79,7 +79,7 @@ def test_construir_rutas_respeta_tiempo_maximo_incluido_el_tramo_a_la_finca():
     dem = _dem([(i, 5, 4.70, -74.10 - i * 0.06) for i in range(1, 7)])
     max_km = settings.velocidad_bus_kmh * settings.tiempo_max_viaje_min / 60
     rutas, sin = construir_rutas(dem, FINCA, settings.velocidad_bus_kmh,
-                                 settings.tiempo_max_viaje_min)
+                                 settings.tiempo_max_viaje_min, BUSES)
     assert sorted(sin) == [4, 5, 6]
     # ruta 1 = [1, 2] (19,5 km); con 3 el tramo final supera 25 km => ruta 2 = [3]
     assert sorted(len(r) for r, _ in rutas) == [1, 2]
@@ -88,10 +88,18 @@ def test_construir_rutas_respeta_tiempo_maximo_incluido_el_tramo_a_la_finca():
         assert km == pytest.approx(_km_total(dem, ruta, FINCA))  # incluye tramo final
 
 
-def test_construir_rutas_semilla_es_la_parada_con_mas_personas():
-    dem = _dem([(1, 2, 4.70, -74.11), (2, 30, 4.70, -74.12), (3, 1, 4.70, -74.13)])
-    rutas, _ = construir_rutas(dem, FINCA, 25.0, 60.0)
-    assert rutas[0][0][0] == 2
+def test_construir_rutas_fusiona_si_baja_el_costo_de_buses():
+    # Dos grupos de 10 personas: separados son 2 MICRO (630000); juntos, 1 BUSETA (378000).
+    dem = _dem([(1, 10, 4.70, -74.11), (2, 10, 4.70, -74.12)])
+    rutas, _ = construir_rutas(dem, FINCA, 25.0, 60.0, BUSES)
+    assert [sorted(r) for r, _ in rutas] == [[1, 2]]
+
+
+def test_construir_rutas_no_fusiona_si_supera_el_recorrido():
+    # Dos paraderos a ~20 km de la finca, en lados opuestos: juntos no caben en 25 km.
+    dem = _dem([(1, 10, 4.70, -74.10 - 0.18), (2, 10, 4.70, -74.10 + 0.18)])
+    rutas, sin = construir_rutas(dem, FINCA, 25.0, 60.0, BUSES)
+    assert len(rutas) == 2 and sin == []
 
 
 def test_simular_cuadra_personas_buses_y_costo_por_finca():

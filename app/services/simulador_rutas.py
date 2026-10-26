@@ -1,8 +1,8 @@
 """Simulador de rutas nuevas a partir de paraderos existentes.
 
-Cada ruta arranca en un paradero, recoge personas en paraderos existentes y
-termina en la finca de destino (Nivel2 de los datos; coordenadas del KML). Para
-cada ruta se elige el tipo de bus y la cantidad que cuestan menos.
+Cada ruta recoge personas en paraderos existentes y termina en la finca de
+destino (Nivel2 de los datos; coordenadas del KML). Para cada ruta se elige el
+tipo de bus y la cantidad que cuestan menos.
 
 Supuestos:
 - Una persona viaja desde su paradero hasta la finca: el tiempo máximo incluye
@@ -63,39 +63,79 @@ def construir_rutas(
     destino: tuple[float, float],
     velocidad_kmh: float,
     tiempo_max_min: float,
+    buses: list[Bus],
 ) -> tuple[list[tuple[list[int], float]], list[int]]:
-    """Rutas hacia ``destino`` y paraderos sin servicio.
+    """Rutas hacia ``destino`` y paraderos sin servicio (ahorros de Clarke-Wright).
 
-    ``dem`` trae ``parada_id, personas, lat, lon`` de una sola finca. Devuelve
-    ``([(ruta, km_total), ...], sin_servicio)``. Cada ruta arranca en el paradero
-    con más personas sin asignar y crece hacia el más cercano mientras el
-    recorrido total (paraderos + tramo final a la finca) quepa en el máximo.
+    ``dem`` trae ``parada_id, personas, lat, lon`` de una sola finca. Empieza con
+    una ruta por paradero y fusiona, mientras baje el costo de buses, dos rutas
+    concatenadas (la de atrás termina donde empieza la otra) si el recorrido total
+    (paraderos + tramo final a la finca) sigue dentro del máximo.
+    Devuelve ``([(ruta, km_total), ...], sin_servicio)``.
     """
     max_km = velocidad_kmh * tiempo_max_min / 60
     coords = {r.parada_id: (r.lat, r.lon) for r in dem.itertuples()}
+    carga = dict(zip(dem["parada_id"], dem["personas"]))
     sin_servicio = [p for p, c in coords.items() if haversine_km(c, destino) > max_km]
-    pendientes = set(coords) - set(sin_servicio)
-    orden = dem.sort_values(["personas", "parada_id"], ascending=[False, True])
-    rutas: list[tuple[list[int], float]] = []
-    for semilla in orden["parada_id"]:
-        if semilla not in pendientes:
-            continue
-        ruta, km = [semilla], 0.0
-        pendientes.remove(semilla)
-        while True:
-            ult = coords[ruta[-1]]
-            factibles = [
-                p for p in pendientes
-                if km + haversine_km(ult, coords[p]) + haversine_km(coords[p], destino) <= max_km
-            ]
-            if not factibles:
-                break
-            c = min(factibles, key=lambda p: (haversine_km(ult, coords[p]), p))
-            km += haversine_km(ult, coords[c])
-            ruta.append(c)
-            pendientes.remove(c)
-        rutas.append((ruta, km + haversine_km(coords[ruta[-1]], destino)))
-    return rutas, sin_servicio
+
+    def km_de(ruta: list[int]) -> float:
+        tramos = sum(haversine_km(coords[a], coords[b]) for a, b in zip(ruta, ruta[1:]))
+        return tramos + haversine_km(coords[ruta[-1]], destino)
+
+    def costo_de(ruta: list[int]) -> float:
+        return elegir_bus(sum(carga[p] for p in ruta), buses)[2]
+
+    rutas = {p: [p] for p in coords if p not in sin_servicio}
+    # Cada paso baja el costo total de forma estricta: el ciclo termina.
+    while _fusionar_mejor(rutas, km_de, costo_de, max_km) or _reubicar(rutas, km_de, costo_de, max_km):
+        pass
+    return [(ruta, km_de(ruta)) for ruta in rutas.values()], sin_servicio
+
+
+def _fusionar_mejor(rutas, km_de, costo_de, max_km) -> bool:
+    """Concatena el par de rutas que más baja el costo (si hay alguno)."""
+    mejor = None
+    for a in rutas:
+        for b in rutas:
+            if a == b:
+                continue
+            nueva = rutas[a] + rutas[b]
+            if km_de(nueva) > max_km:
+                continue
+            ahorro = costo_de(rutas[a]) + costo_de(rutas[b]) - costo_de(nueva)
+            if ahorro > 0 and (mejor is None or ahorro > mejor[0]):
+                mejor = (ahorro, a, b)
+    if mejor is None:
+        return False
+    _, a, b = mejor
+    rutas[a] = rutas[a] + rutas.pop(b)
+    return True
+
+
+def _reubicar(rutas, km_de, costo_de, max_km) -> bool:
+    """Mueve un paradero al inicio o al final de otra ruta si baja el costo total.
+
+    Quitar un paradero nunca alarga el recorrido (desigualdad triangular), así que
+    la ruta de origen sigue dentro del máximo.
+    """
+    for a in list(rutas):
+        for p in list(rutas[a]):
+            resto = [x for x in rutas[a] if x != p]
+            if not resto:
+                continue
+            for b in rutas:
+                if b == a:
+                    continue
+                for nueva in ([*rutas[b], p], [p, *rutas[b]]):
+                    if km_de(nueva) > max_km:
+                        continue
+                    ganancia = (costo_de(rutas[a]) + costo_de(rutas[b])
+                                - costo_de(resto) - costo_de(nueva))
+                    if ganancia > 0:
+                        rutas[a] = resto
+                        rutas[b] = nueva
+                        return True
+    return False
 
 
 def simular(
@@ -112,7 +152,7 @@ def simular(
     filas, sin = [], []
     for cod, destino in destinos.items():
         d = dem[dem["cod_nivel2"] == cod]
-        rutas, sin_servicio = construir_rutas(d, destino, velocidad_kmh, tiempo_max_min)
+        rutas, sin_servicio = construir_rutas(d, destino, velocidad_kmh, tiempo_max_min, buses)
         por_id = d.set_index("parada_id")
         for ruta, km in rutas:
             personas = int(por_id.loc[ruta, "personas"].sum())
