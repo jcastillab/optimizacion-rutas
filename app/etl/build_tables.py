@@ -111,6 +111,18 @@ def construir_tablas(datos: DatosCrudos) -> TablasProcesadas:
             "No se encontró ninguna fila del archivo de posiciones para las "
             f"fincas en alcance ({sorted(fincas_alcance)})."
         )
+    # Solo se ocultan las FESTIVO: `pos` (con esas filas) sigue dando coordenadas LABORAL.
+    oculta = pos_yarumo["tipo_dia"].eq("FESTIVO") & pos_yarumo["ruta_base_norm"].isin(
+        settings.rutas_festivo_ocultas
+    )
+    if oculta.any():
+        issues.append(
+            "Variantes FESTIVO ocultas por configuración (rutas_festivo_ocultas): "
+            f"{sorted(set(pos_yarumo.loc[oculta, 'ruta_base_norm']))} "
+            f"({int(oculta.sum())} filas de posiciones). Sus coordenadas siguen "
+            "usándose para las paradas laborales."
+        )
+    pos_yarumo = pos_yarumo[~oculta].copy()
 
     # --- rutas_base: unión de nombres base normalizados ----------------
     claves_base = (

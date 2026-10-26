@@ -67,7 +67,9 @@ POS_FUNZA = [
 ]
 
 
-def test_festivo_no_fusiona_rutas_con_alias():
+def test_festivo_no_fusiona_rutas_con_alias(monkeypatch):
+    # Se desactiva la ocultación para probar solo la separación por alias.
+    monkeypatch.setattr(settings, "rutas_festivo_ocultas", [])
     tablas = construir_tablas(_datos(POS_FUNZA))
 
     nombres_base = set(tablas.rutas_base["nombre"])
@@ -78,6 +80,21 @@ def test_festivo_no_fusiona_rutas_con_alias():
     assert festivo.get("FUNZA, MSOQUERA(R1)") == {"C", "D"}
     # dos variantes FESTIVO distintas
     assert len([b for b in festivo if b.startswith("FUNZA")]) == 2
+
+
+def test_festivo_oculta_variante_sin_quitar_coordenadas_laborales():
+    tablas = construir_tablas(_datos(POS_FUNZA, catalogo=(("FUNZA(R1)", "C"),)))
+
+    festivo = _paradas_por_base(tablas, "FESTIVO")
+    assert "FUNZA, MSOQUERA(R1)" not in festivo
+    assert festivo.get("FUNZA(R1)") == {"A", "B"}
+    assert any("rutas_festivo_ocultas" in i and "MSOQUERA" in i for i in tablas.issues)
+
+    # la coordenada de C sigue viniendo de las filas ocultas
+    p = tablas.paradas[tablas.paradas["nombre"] == "C"]
+    assert len(p) == 1
+    assert p.iloc[0]["coord_match_status"] == "EXACTO"
+    assert p.iloc[0]["lat"] == pytest.approx(COORDS["C"][0])
 
 
 # --- criterio 2: LABORAL sigue usando el alias para coordenadas ------------
@@ -186,7 +203,8 @@ def test_smoke_datos_reales_festivo():
     n_paradas = tablas.paradas["ruta_variante_id"].value_counts()
 
     assert n_paradas.get(vid.get("FUNZA(R1)"), 0) == 20
-    assert n_paradas.get(vid.get("FUNZA, MSOQUERA(R1)"), 0) == 31
+    # oculta por configuración hasta confirmar la ruta y su tarifa
+    assert "FUNZA, MSOQUERA(R1)" not in vid
 
     from app.etl.build_tables import variantes_con_mismas_paradas
 

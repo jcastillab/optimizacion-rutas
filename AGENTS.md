@@ -30,9 +30,13 @@ un reporte de reconciliación.
    fuente repite el mismo conjunto de paradas en varias rutas FDS de un
    municipio (FACATATIVA R1-R3, MADRID R1-R3, ROSAL R1-R5): se conservan
    separadas, el reporte de reconciliación las lista y `evaluar_baseline.py`
-   las cuenta una vez (distancia original = promedio del grupo). Deuda: la
-   base FESTIVO `FUNZA, MSOQUERA(R1)` no tiene tarifa propia (la tarifa
-   aplica el alias y queda en `FUNZA(R1)`).
+   las cuenta una vez (distancia original = promedio del grupo).
+   La variante FESTIVO `FUNZA, MSOQUERA(R1)` (31 paradas) está oculta en
+   `rutas_festivo_ocultas` (config): no se sabe a qué ruta corresponde ni
+   tiene tarifa. Sus filas siguen dando coordenadas a FUNZA(R1) LABORAL.
+   Al confirmar la ruta: la tarifa va en el Excel como `<RUTA> FDS` con
+   `tipo_tarifa = FESTIVOS` (como FACATATIVA(R1) FDS), y el nombre debe
+   coincidir con el de las paradas (el alias `MSOQUERA` está en normalize.py).
 7. **Los insumos crudos (`datos/`, Excel/KML) no se editan a mano ni se
    versionan**; `data/` es salida regenerable del ETL.
 
