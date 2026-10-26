@@ -50,11 +50,14 @@ un reporte de reconciliación.
   con `ordenar_paradas` y suma la distancia.
 - `scripts/cruce_fincas.py`: cruza paradas con las fincas del KML por
   distancia (300 m) y similitud de nombre (0.85).
-- `app/services/simulador_rutas.py`: arma rutas nuevas con paraderos existentes
-  (semilla = más personas, crece hacia la más cercana mientras el recorrido
-  quepa en `velocidad_bus_kmh` × `tiempo_max_viaje_min`) y elige bus y cantidad
-  por costo mínimo. Supuestos: la persona viaja hasta el último paradero de la
-  ruta (no hay destino en los datos); costo de bus = mediana REGULAR por tipo.
+- `app/services/simulador_rutas.py`: arma rutas nuevas que recogen personas en
+  paraderos existentes y terminan en la finca (Nivel2, punto del KML según
+  `destino_kml` en config). Semilla = más personas; crece hacia la más cercana
+  mientras paraderos + tramo final quepan en `velocidad_bus_kmh` ×
+  `tiempo_max_viaje_min`. Elige bus y cantidad por costo mínimo. Costo de bus =
+  mediana REGULAR por tipo. Paraderos a más de 25 km de la finca salen como sin
+  servicio. Los sectores de YARUMO se asociaron a sus puntos del KML por nombre:
+  confirmar.
 - `app/api/`, `app/repository/`, `app/schemas/`: esqueletos vacíos (la API
   FastAPI aún no existe).
 

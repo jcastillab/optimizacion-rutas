@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     velocidad_bus_kmh: float = 25.0
     tiempo_max_viaje_min: float = 60.0
 
+    # Fincas de destino: nombre en fincas.csv (Nivel2) -> clave del punto en el KML.
+    # Los sectores se asociaron por nombre; confirmar antes de costear.
+    destino_kml: dict[str, str] = {
+        "YARUMO": "YARUMO",
+        "YARUMO SECTOR LOS LAURELES": "LAURELES",
+        "YARUMO SECTOR PAPIROS": "PAPIROS",
+    }
+
     # Cruce parada↔finca (scripts/cruce_fincas.py): distancia máxima en metros y
     # similitud mínima de nombre (difflib) para aceptar una coincidencia.
     umbral_cruce_metros: float = 300.0
