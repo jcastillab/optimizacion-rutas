@@ -16,9 +16,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collections import Counter
 
 import pandas as pd
-
-from app.core.config import settings
-from app.services.recorrido import calcular_recorrido
 from cruce_fincas import (
     DATOS,
     EXCEL_PARADAS,
@@ -27,6 +24,9 @@ from cruce_fincas import (
     leer_kml,
     leer_paradas,
 )
+
+from app.core.config import settings
+from app.services.recorrido import calcular_recorrido
 
 DESTINO = settings.processed_dir.parent / "mapa_rutas.html"
 

@@ -92,6 +92,58 @@ def construir_rutas(
     return [(ruta, km_de(ruta)) for ruta in rutas.values()], sin_servicio
 
 
+def construir_rutas_voraz(
+    dem: pd.DataFrame,
+    destino: tuple[float, float],
+    velocidad_kmh: float,
+    tiempo_max_min: float,
+    buses: list[Bus],
+) -> tuple[list[tuple[list[int], float]], list[int]]:
+    """Voraz con tope de capacidad; mismo retorno que ``construir_rutas``.
+
+    Semilla = paradero libre con más personas; crece al paradero libre más cercano
+    al último mientras el recorrido total quepa y la carga no pase la capacidad del
+    bus más grande del catálogo (así cada ruta usa un solo bus).
+    """
+    max_km = velocidad_kmh * tiempo_max_min / 60
+    cap = max(b.capacidad for b in buses)
+    c = {r.parada_id: (r.lat, r.lon) for r in dem.itertuples()}
+    carga = dict(zip(dem["parada_id"], dem["personas"]))
+    sin = [p for p in c if haversine_km(c[p], destino) > max_km]
+    libres = {p for p in c if p not in sin}
+
+    def km(r):
+        return (sum(haversine_km(c[a], c[b]) for a, b in zip(r, r[1:]))
+                + haversine_km(c[r[-1]], destino))
+
+    rutas = []
+    while libres:
+        ruta = [max(sorted(libres), key=lambda p: carga[p])]
+        libres.discard(ruta[0])
+        total = carga[ruta[0]]
+        while True:
+            cand = sorted(libres, key=lambda q: (haversine_km(c[ruta[-1]], c[q]), q))
+            nuevo = next((q for q in cand
+                          if total + carga[q] <= cap and km(ruta + [q]) <= max_km), None)
+            if nuevo is None:
+                break
+            ruta.append(nuevo)
+            total += carga[nuevo]
+            libres.discard(nuevo)
+        rutas.append((ruta, km(ruta)))
+    return rutas, sin
+
+
+def construir_rutas_mejor(dem, destino, velocidad_kmh, tiempo_max_min, buses):
+    """Corre Clarke-Wright+reubicación y el voraz con tope; deja la de menor costo
+    total (empate: menos rutas)."""
+    carga = dict(zip(dem["parada_id"], dem["personas"]))
+    candidatas = [f(dem, destino, velocidad_kmh, tiempo_max_min, buses)
+                  for f in (construir_rutas, construir_rutas_voraz)]
+    return min(candidatas, key=lambda rs: (
+        sum(elegir_bus(sum(carga[p] for p in r), buses)[2] for r, _ in rs[0]), len(rs[0])))
+
+
 def _fusionar_mejor(rutas, km_de, costo_de, max_km) -> bool:
     """Concatena el par de rutas que más baja el costo (si hay alguno)."""
     mejor = None
@@ -145,14 +197,27 @@ def simular(
     velocidad_kmh: float,
     tiempo_max_min: float,
     destinos: dict[int, tuple[float, float]],
+    metodo: str = "heuristica",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Rutas simuladas y paraderos sin servicio, por finca (``cod_nivel2``) de ``destinos``."""
+    """Rutas simuladas y paraderos sin servicio, por finca (``cod_nivel2``) de ``destinos``.
+
+    ``metodo``: "heuristica" (rápida, segundos: por finca corre Clarke-Wright +
+    reubicación y el voraz con tope de capacidad y deja la de menor costo) o
+    "milp" (partición de conjuntos sobre un banco de rutas; ver
+    ``optimizador_milp``; tarda minutos y no está pensado para la web).
+    """
+    if metodo == "milp":
+        from app.services.optimizador_milp import construir_rutas_milp as construir
+    elif metodo == "heuristica":
+        construir = construir_rutas_mejor
+    else:
+        raise ValueError(f"metodo desconocido: {metodo!r} (use 'heuristica' o 'milp')")
     dem = demanda_por_paradero(empleados, paradas)
     buses = catalogo_buses(tarifas)
     filas, sin = [], []
     for cod, destino in destinos.items():
         d = dem[dem["cod_nivel2"] == cod]
-        rutas, sin_servicio = construir_rutas(d, destino, velocidad_kmh, tiempo_max_min, buses)
+        rutas, sin_servicio = construir(d, destino, velocidad_kmh, tiempo_max_min, buses)
         por_id = d.set_index("parada_id")
         for ruta, km in rutas:
             personas = int(por_id.loc[ruta, "personas"].sum())

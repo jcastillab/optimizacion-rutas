@@ -9,6 +9,7 @@ from app.services.simulador_rutas import (
     Bus,
     catalogo_buses,
     construir_rutas,
+    construir_rutas_voraz,
     demanda_por_paradero,
     elegir_bus,
     simular,
@@ -134,3 +135,58 @@ def test_simulador_datos_reales_cubre_a_todos_con_destino():
     assert rutas["personas"].sum() + sin["personas"].sum() == len(en_yarumo)
     max_km = settings.velocidad_bus_kmh * settings.tiempo_max_viaje_min / 60
     assert (rutas["km"] <= max_km + 1e-6).all()
+
+
+# --- voraz con tope de capacidad -------------------------------------------------
+def _dem_voraz():
+    # 12 paraderos de 7 personas en abanico cerca de la finca + uno lejano (sin servicio)
+    filas = [(i, 7, 4.70 + 0.01 * (i % 3), -74.10 - 0.01 * i) for i in range(1, 13)]
+    return _dem(filas + [(99, 5, 5.2, -74.1)])
+
+
+def test_voraz_respeta_capacidad_maxima_cobertura_y_recorrido():
+    dem = _dem_voraz()
+    rutas, sin = construir_rutas_voraz(dem, FINCA, 25.0, 60.0, BUSES)
+    por = dict(zip(dem["parada_id"], dem["personas"]))
+    asignadas = [p for r, _ in rutas for p in r]
+    assert sin == [99]
+    assert sorted(asignadas + sin) == sorted(dem["parada_id"])
+    assert len(asignadas) == len(set(asignadas))
+    cap = max(b.capacidad for b in BUSES)
+    for ruta, km in rutas:
+        carga = sum(por[p] for p in ruta)
+        assert carga <= cap
+        assert elegir_bus(carga, BUSES)[1] == 1  # un solo bus por ruta
+        assert km <= 25.0 + 1e-9
+        assert km == pytest.approx(_km_total(dem, ruta, FINCA))
+
+
+def test_voraz_tope_sale_del_catalogo_no_es_40_fijo():
+    dem = _dem([(i, 7, 4.70, -74.10 - i * 0.005) for i in range(1, 7)])
+    chico = [Bus("MICRO", 19, 315000.0)]
+    rutas, _ = construir_rutas_voraz(dem, FINCA, 25.0, 60.0, chico)
+    assert all(sum(7 for _ in r) <= 19 for r, _ in rutas) and len(rutas) == 3
+
+
+def test_voraz_es_determinista():
+    dem = _dem_voraz()
+    assert construir_rutas_voraz(dem, FINCA, 25.0, 60.0, BUSES) == \
+        construir_rutas_voraz(dem, FINCA, 25.0, 60.0, BUSES)
+
+
+def test_simular_heuristica_elige_la_de_menor_costo_por_finca():
+    dem = _dem_voraz()
+    empleados = pd.DataFrame({"parada_id": [i for i in range(1, 13) for _ in range(7)],
+                              "cod_nivel2": [86] * 84})
+    paradas = pd.DataFrame({"parada_id": list(range(1, 13)), "nombre": ["x"] * 12,
+                            "lat": [4.70 + 0.01 * (i % 3) for i in range(1, 13)],
+                            "lon": [-74.10 - 0.01 * i for i in range(1, 13)]})
+    tarifas = pd.DataFrame(
+        [("MICRO", 19, 315000, "REGULAR"), ("BUSETA", 25, 378000, "REGULAR"),
+         ("BUS", 40, 458000, "REGULAR")],
+        columns=["tipo_vehiculo", "capacidad", "tarifa", "tipo_tarifa"])
+    rutas, _ = simular(empleados, paradas, tarifas, 25.0, 60.0, {86: FINCA})
+    d = demanda_por_paradero(empleados, paradas)
+    costo = lambda f: sum(elegir_bus(sum(7 for _ in r), BUSES_T)[2] for r, _ in f(d, FINCA, 25.0, 60.0, BUSES_T)[0])
+    BUSES_T = catalogo_buses(tarifas)
+    assert rutas["costo_total"].sum() == min(costo(construir_rutas), costo(construir_rutas_voraz))

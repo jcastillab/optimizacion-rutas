@@ -14,10 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import pandas as pd
+from cruce_fincas import DATOS, leer_kml
 
 from app.core.config import settings
 from app.services.simulador_rutas import simular
-from cruce_fincas import DATOS, leer_kml
 
 
 def destinos_desde_kml(fincas: pd.DataFrame) -> dict[int, tuple[float, float]]:
