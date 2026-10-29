@@ -1,10 +1,11 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { Corrida } from '../core/models';
+import { MapaRuta } from './mapa-ruta';
 
 @Component({
   selector: 'app-corrida-resultado',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, MapaRuta],
   template: `
     @let c = corrida();
     @let dif = c.resumen.diferencia_pct;
@@ -65,6 +66,11 @@ import { Corrida } from '../core/models';
           </tbody>
         </table>
       </div>
+    </section>
+
+    <section aria-labelledby="mapa-t">
+      <h2 id="mapa-t">Mapa de la ruta</h2>
+      <app-mapa-ruta [rutas]="c.rutas ?? []" />
     </section>
 
     <section aria-labelledby="sin-t">

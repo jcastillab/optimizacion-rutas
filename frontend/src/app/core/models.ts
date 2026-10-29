@@ -23,3 +23,4 @@ export interface Evento {
   id: number; fecha: string; usuario: string | null; accion: string; entidad: string | null;
   entidad_id: number | null; detalle: string | null; request_id: string | null;
 }
+export interface Finca { id: number; nombre: string; cod_nivel2: number | null; lat: number; lon: number; activo: boolean; }

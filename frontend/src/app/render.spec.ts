@@ -60,11 +60,12 @@ function verifica(el: HTMLElement) {
 }
 
 describe('render con datos reales del API', () => {
-  it('CorridaResultado: cifras, advertencias, snapshot y sin pedir catálogos vivos', () => {
+  it('CorridaResultado: cifras, advertencias, snapshot (solo pide las coordenadas de la finca)', () => {
     const http = montar();
     const f = TestBed.createComponent(CorridaResultado);
     f.componentRef.setInput('corrida', corrida);
     f.detectChanges();
+    http.match((r) => r.url === '/api/fincas').forEach((r) => r.flush(pagina([]))); // coordenadas de la finca para el mapa
     http.expectNone(() => true);
     verifica(f.nativeElement);
     expect(texto(f.nativeElement)).not.toContain('no tienen paradero');
@@ -75,6 +76,7 @@ describe('render con datos reales del API', () => {
     const f = TestBed.createComponent(CorridaResultado);
     f.componentRef.setInput('corrida', sinComparar);
     f.detectChanges();
+    http.match((r) => r.url === '/api/fincas').forEach((r) => r.flush(pagina([]))); // coordenadas de la finca para el mapa
     http.expectNone(() => true);
     const el: HTMLElement = f.nativeElement;
     expect(texto(el)).toContain('No comparable');
