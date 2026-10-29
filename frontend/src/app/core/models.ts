@@ -8,6 +8,9 @@ export interface Resumen {
   costo_red_actual: number; diferencia_pct: number | null; personas_sin_servicio: number; personas_sin_paradero?: number;
   /** Siempre en corridas nuevas; puede faltar en las viejas. */
   advertencias?: string[];
+  /** Indicadores: solo en corridas nuevas. */
+  ocupacion_pct?: number | null; costo_por_persona?: number | null; km_total?: number;
+  minutos_prom?: number | null; minutos_max?: number | null; cobertura_pct?: number | null;
 }
 export interface RutaSimulada {
   ruta_simulada: number; finca_id: number; finca_nombre?: string; paraderos: Parada[]; personas: number; km: number;

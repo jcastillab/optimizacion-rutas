@@ -53,6 +53,12 @@ def test_simulacion_sobre_datos_importados(admin, lector):
     assert res["diferencia_pct"] == pytest.approx(
         (res["costo_total"] - res["costo_red_actual"]) / res["costo_red_actual"] * 100, abs=0.06)
     assert all(p["nombre"] and p["lat"] for r_ in c["rutas"] for p in r_["paraderos"])
+    asientos = sum(r_["buses"] * r_["capacidad"] for r_ in c["rutas"])
+    assert res["ocupacion_pct"] == pytest.approx(res["personas"] / asientos * 100, abs=0.06)
+    assert res["costo_por_persona"] == pytest.approx(res["costo_total"] / res["personas"], abs=1)
+    assert res["km_total"] == pytest.approx(sum(r_["km"] * r_["buses"] for r_ in c["rutas"]), abs=0.06)
+    assert res["minutos_max"] == max(r_["minutos_max"] for r_ in c["rutas"])
+    assert 0 < res["minutos_prom"] <= res["minutos_max"] and 0 < res["cobertura_pct"] <= 100
     assert sum(s["personas"] for s in c["sin_servicio"]) == res["personas_sin_servicio"]
     # Persistida: aparece en el historial y se recupera completa.
     assert lector.get(f"/api/corridas/{c['id']}").json() == c

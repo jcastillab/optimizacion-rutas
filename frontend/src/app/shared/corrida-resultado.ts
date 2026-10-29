@@ -34,6 +34,17 @@ import { MapaRuta } from './mapa-ruta';
         </div>
         <div><dt>Sin servicio</dt><dd>{{ c.resumen.personas_sin_servicio }}</dd></div>
       </dl>
+      @if (c.resumen.ocupacion_pct != null) {
+        <h3>Indicadores</h3>
+        <dl class="kpis" aria-label="Indicadores de la corrida">
+          <div><dt>Ocupación de asientos</dt><dd>{{ c.resumen.ocupacion_pct | number: '1.1-1' }} %</dd></div>
+          <div><dt>Costo por persona</dt><dd>{{ c.resumen.costo_por_persona | number: '1.0-0' }}</dd></div>
+          <div><dt>Km totales (buses)</dt><dd>{{ c.resumen.km_total | number: '1.0-0' }}</dd></div>
+          <div><dt>Viaje promedio</dt><dd>{{ c.resumen.minutos_prom | number: '1.0-0' }} min</dd></div>
+          <div><dt>Viaje máximo</dt><dd>{{ c.resumen.minutos_max | number: '1.0-0' }} min</dd></div>
+          <div><dt>Cobertura</dt><dd>{{ c.resumen.cobertura_pct | number: '1.1-1' }} %</dd></div>
+        </dl>
+      }
       @if ((c.resumen.personas_sin_paradero ?? 0) > 0) {
         <p class="estado aviso" role="status">
           {{ c.resumen.personas_sin_paradero }} persona(s) no tienen paradero asignado y no entraron en la simulación.

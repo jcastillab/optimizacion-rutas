@@ -124,6 +124,11 @@ maestro no cruzan con el catálogo de rutas.
  "sin_servicio": [{"finca_id": 1, "paradero_id": 9, "personas": 2}]}
 ```
 
+- Indicadores en `resumen` (corridas nuevas; `null` si no hay personas servidas):
+  `ocupacion_pct` (personas / asientos de los buses), `costo_por_persona`, `km_total`
+  (km de la ruta × buses), `minutos_prom` (ponderado por personas), `minutos_max`,
+  `cobertura_pct` (servidas / servidas + sin servicio + sin paradero). Son sobre las
+  personas simuladas, no sobre el maestro completo.
 - `diferencia_pct` es `null` cuando no es comparable (0 rutas, sin `costo_red_actual`, o
   el conjunto simulado difiere del importado por registros inactivos). **La cifra es
   orientativa:** `costo_red_actual` supone un bus por fila de tarifa (no confirmado con

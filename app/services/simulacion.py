@@ -101,9 +101,22 @@ def calcular(db: Session, velocidad_kmh: float | None, tiempo_max_min: float | N
                             f"({detalle}), así que el conjunto simulado no es comparable con el importado.")
     else:
         diferencia = round((costo - red) / red * 100, 1)
+    personas_ok = sum(f["personas"] for f in filas)
+    asientos = sum(f["buses"] * f["capacidad"] for f in filas)
+    sin_servicio_n = sum(s["personas"] for s in filas_sin)
+    candidatas = personas_ok + sin_servicio_n + (len(personas) - len(con_paradero))
+    indicadores = {
+        "ocupacion_pct": round(personas_ok / asientos * 100, 1) if asientos else None,
+        "costo_por_persona": round(costo / personas_ok) if personas_ok else None,
+        "km_total": round(sum(f["km"] * f["buses"] for f in filas), 1),
+        "minutos_prom": round(sum(f["minutos_max"] * f["personas"] for f in filas) / personas_ok, 1) if personas_ok else None,
+        "minutos_max": max((f["minutos_max"] for f in filas), default=None),
+        "cobertura_pct": round(personas_ok / candidatas * 100, 1) if candidatas else None,
+    }
     resumen = {
+        **indicadores,
         "rutas": len(filas), "buses": sum(f["buses"] for f in filas),
-        "personas": sum(f["personas"] for f in filas), "costo_total": costo,
+        "personas": personas_ok, "costo_total": costo,
         "costo_red_actual": red, "diferencia_pct": diferencia,
         "personas_sin_servicio": sum(s["personas"] for s in filas_sin),
         "personas_sin_paradero": len(personas) - len(con_paradero),

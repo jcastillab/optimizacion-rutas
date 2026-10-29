@@ -135,6 +135,11 @@ cd frontend; npm install; npm run build; cd ..
 .\venv\Scripts\python.exe scripts\iniciar_app.py
 # Desarrollo del frontend con recarga (proxy de /api al backend): cd frontend; npm start
 
+# Presentación (HTML autocontenido en docs/) desde data/demo/*.json (API sobre una base de
+# demo, nunca la real) y pantallazos con marcas (requiere Chromium de Playwright):
+.\venv\Scripts\python.exe scripts\generar_presentacion.py
+.\venv\Scripts\python.exe scripts\capturar_demo.py <carpeta> [--base http://127.0.0.1:8765]
+
 # Mapa de rutas y fincas del KML (orden de aparición en el Excel):
 .\venv\Scripts\python.exe scripts\mapa_rutas.py [--ruta "PAPIROS"]
 ```
