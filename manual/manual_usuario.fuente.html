@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transporte Sunshine · Manual de usuario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+[hidden]{display:none!important}img{max-width:100%}
+/* Layout: sidebar índice fijo + columna de lectura; en móvil, barra superior con índice plegable.
+   Color: marca Sunshine Bouquet — turquesa #00AFAA y fucsia #E04B9B (rellenos); variantes oscuras para texto legible. */
+:root{
+  --brand:#00afaa; --brand-pink:#e04b9b;
+  --bg:#f5f9f9; --surface:#ffffff; --sunk:#e6f2f1; --line:#cfe1e0;
+  --fg:#16302f; --muted:#52706e;
+  --leaf:#00807c; --leaf-soft:#d6f1ef;
+  --rose:#b9307a; --rose-soft:#fbe5f1;
+  --warn:#8a5a00; --warn-soft:#fbf0d9;
+  --ok:#00807c; --ok-soft:#e0f4f2;
+  --code-bg:#12302f; --code-fg:#e3f3f2;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", Consolas, "Cascadia Mono", monospace;
+  --radius:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --brand:#2cc6c0; --brand-pink:#ec6cb0; --bg:#0e1a1a; --surface:#142424; --sunk:#1a2e2e; --line:#294443;
+    --fg:#e1f0ef; --muted:#93b4b2;
+    --leaf:#45d3cd; --leaf-soft:#123b39;
+    --rose:#f287c0; --rose-soft:#3a1a2d;
+    --warn:#e8b65a; --warn-soft:#352a14;
+    --ok:#45d3cd; --ok-soft:#133230;
+    --code-bg:#081414; --code-fg:#d9eeed;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --brand:#2cc6c0; --brand-pink:#ec6cb0; --bg:#0e1a1a; --surface:#142424; --sunk:#1a2e2e; --line:#294443;
+  --fg:#e1f0ef; --muted:#93b4b2;
+  --leaf:#45d3cd; --leaf-soft:#123b39;
+  --rose:#f287c0; --rose-soft:#3a1a2d;
+  --warn:#e8b65a; --warn-soft:#352a14;
+  --ok:#45d3cd; --ok-soft:#133230;
+  --code-bg:#081414; --code-fg:#d9eeed;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.6;margin:0}
+a{color:var(--leaf)}
+:focus-visible{outline:3px solid var(--rose);outline-offset:2px;border-radius:4px}
+
+.shell{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1240px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));gap:48px}
+
+/* Índice */
+.toc{position:sticky;top:env(safe-area-inset-top, 0px);align-self:start;max-height:100vh;overflow-y:auto;padding-block:28px}
+.brand{font-family:var(--f-display);font-weight:800;font-size:1.25rem;line-height:1.15;margin:0 0 4px}
+.brand small{display:block;font-family:var(--f-body);font-weight:400;font-size:.85rem;color:var(--muted);margin-top:4px}
+.toc ol{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:2px}
+.toc a{display:flex;gap:10px;padding:6px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-size:.95rem;line-height:1.35}
+.toc a::before{content:attr(data-n);font-family:var(--f-mono);font-size:.78rem;min-width:1.6em;padding-top:2px;color:var(--muted)}
+.ver{display:inline-block;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.04em;padding:1px 6px;border-radius:5px;background:var(--warn-soft);color:var(--warn);vertical-align:2px;white-space:nowrap}
+.cmd pre .v{color:#f3b8c8;font-weight:600}
+.toc a:hover{background:var(--sunk);color:var(--fg)}
+.toc a.active{background:var(--leaf-soft);color:var(--fg);font-weight:600}
+.toc a.active::before{color:var(--leaf)}
+.mobilebar{display:none}
+.logo{display:block;aspect-ratio:720/207;background:url(img/logo_sunshine_bouquet.png) no-repeat center/contain}
+.brand .logo{width:200px;max-width:100%;margin-bottom:18px}
+.lockup{display:flex;align-items:center;gap:10px;min-width:0}
+.mobilebar .logo{width:118px;flex:none}
+
+main{padding-block:28px 80px;min-width:0}
+section{padding-top:24px;scroll-margin-top:16px}
+section + section{border-top:1px solid var(--line);margin-top:40px}
+.eyebrow{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--rose);margin:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15}
+h1{font-size:clamp(2rem,4.5vw,3rem);font-weight:800;margin:6px 0 12px;letter-spacing:-.01em}
+h2{font-size:1.75rem;font-weight:800;margin:4px 0 14px}
+h3{font-size:1.2rem;font-weight:600;margin:28px 0 8px}
+p,li{max-width:68ch}
+.lead{font-size:1.15rem;color:var(--muted);max-width:60ch}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--sunk);padding:1px 5px;border-radius:5px}
+kbd{font-family:var(--f-mono);font-size:.85em;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+
+/* Recorrido */
+.flow{list-style:none;padding:0;margin:24px 0 8px;display:flex;flex-wrap:wrap;gap:8px 4px;align-items:center}
+.flow li{display:flex;align-items:center;gap:4px;max-width:none}
+.flow li:not(:last-child)::after{content:"→";color:var(--muted);padding:0 2px}
+.flow a{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);text-decoration:none;font-weight:600;font-size:.95rem;transition:border-color .15s,background .15s}
+.flow a:hover{border-color:var(--leaf);background:var(--leaf-soft)}
+.flow a span{font-family:var(--f-mono);font-size:.75rem;color:var(--rose)}
+.flow .once a{border-style:dashed}
+.legend{font-size:.85rem;color:var(--muted)}
+
+/* Tablas */
+.tbl{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:700;background:var(--sunk);font-size:.85rem;letter-spacing:.02em}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+
+/* Avisos */
+.note{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:12px 14px;border-radius:var(--radius);margin:16px 0;max-width:72ch;border:1px solid transparent}
+.note b.tag{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;height:fit-content;margin-top:3px}
+.note p{margin:0}
+.tip{background:var(--leaf-soft)} .tip b.tag{background:var(--leaf);color:var(--surface)}
+.warn{background:var(--warn-soft)} .warn b.tag{background:var(--warn);color:var(--surface)}
+.done{background:var(--surface);border-color:var(--line)} .done b.tag{background:var(--ok-soft);color:var(--ok)}
+.danger{background:var(--rose-soft)} .danger b.tag{background:var(--rose);color:var(--surface)}
+
+/* Código */
+.cmd{position:relative;margin:14px 0;max-width:100%}
+.cmd pre{margin:0;background:var(--code-bg);color:var(--code-fg);padding:14px 16px;padding-right:96px;border-radius:var(--radius);overflow-x:auto;font-family:var(--f-mono);font-size:.86rem;line-height:1.55}
+.copy{position:absolute;top:8px;right:8px;font:600 .8rem var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer}
+.copy:hover{border-color:var(--leaf)}
+
+/* Checklists */
+.checklist{list-style:none;padding:0;margin:14px 0;display:grid;gap:6px;max-width:72ch}
+.checklist label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--line);cursor:pointer;align-items:start}
+.checklist input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--leaf)}
+.checklist label:has(input:checked){background:var(--ok-soft);border-color:transparent}
+.checklist label:has(input:checked) .t{text-decoration:line-through;color:var(--muted)}
+.progress{display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--muted);margin-top:8px}
+.bar{flex:0 1 220px;height:8px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .25s}
+.reset{font:inherit;font-size:.85rem;background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0}
+
+/* Pasos de configuración */
+.steps{list-style:none;padding:0;margin:18px 0;display:grid;gap:12px;counter-reset:s}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px 14px 60px;position:relative;counter-increment:s;max-width:none}
+.step::before{content:counter(s);position:absolute;left:14px;top:14px;font-family:var(--f-mono);font-weight:600;font-size:.85rem;color:var(--rose)}
+.steps-plain .step::before{content:counter(s)}
+.step h3{margin:0 0 6px;font-size:1.1rem}
+.step p{margin:6px 0}
+.path{font-family:var(--f-mono);font-size:.84rem;background:var(--sunk);padding:2px 7px;border-radius:5px;display:inline;line-height:1.9}
+.step .mark{display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--muted);margin-top:10px;cursor:pointer;width:fit-content}
+.step .mark input{accent-color:var(--leaf);width:17px;height:17px}
+.step:has(.mark input:checked){border-color:var(--leaf);background:var(--ok-soft)}
+
+/* Herramientas */
+.tool{background:var(--surface);border:1.5px solid var(--brand);border-radius:var(--radius);padding:18px;margin:18px 0;max-width:72ch}
+.tool h3{margin-top:0}
+.row{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end}
+.field{display:grid;gap:4px;font-size:.9rem;font-weight:600}
+.field input,.field select{font:inherit;font-weight:400;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:160px;max-width:100%}
+.result{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.result div{background:var(--sunk);border-radius:8px;padding:10px 14px;min-width:150px}
+.result b{display:block;font-family:var(--f-display);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.result span{font-size:.82rem;color:var(--muted)}
+.fine{font-size:.85rem;color:var(--muted);margin:10px 0 0}
+
+/* Buscador de errores */
+.search{width:100%;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--fg)}
+.search:focus{border-color:var(--leaf);outline:none}
+.hits{font-size:.88rem;color:var(--muted);margin:8px 0 0}
+.errors{display:grid;gap:8px;margin-top:14px}
+.err{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--brand-pink);border-radius:8px;padding:10px 14px;display:grid;gap:4px}
+.err q{font-family:var(--f-mono);font-size:.84rem;quotes:none;font-weight:600}
+.err .why{color:var(--muted);font-size:.92rem}
+.err .fix{font-size:.95rem}
+.err .fix b{color:var(--leaf)}
+.err .area{font-family:var(--f-mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}
+
+details.annex{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);margin:12px 0}
+details.annex summary{cursor:pointer;padding:12px 16px;font-weight:700}
+details.annex > div{padding:0 16px 12px}
+
+.traps{counter-reset:tr;list-style:none;padding:0;display:grid;gap:10px}
+.traps li{counter-increment:tr;display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;max-width:72ch}
+.traps li::before{content:counter(tr);font-family:var(--f-display);font-weight:800;font-size:1.3rem;color:var(--rose);line-height:1.2}
+
+footer{margin-top:60px;font-size:.85rem;color:var(--muted)}
+/* Capturas de pantalla: marcas numeradas en rosa; clic para ampliar */
+.shot{margin:16px 0;max-width:100%}
+.shot .zoom{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);cursor:zoom-in;overflow:hidden}
+.shot .zoom:hover{border-color:var(--leaf)}
+.shot img{display:block;width:100%;height:auto}
+.shot figcaption{font-size:.88rem;color:var(--muted);margin-top:6px;max-width:72ch}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 16px;align-items:start;margin:16px 0}
+.shots .shot{margin:0}
+.n{display:inline-grid;place-items:center;min-width:1.4em;height:1.4em;padding:0 .3em;border-radius:99px;background:#d23b8c;color:#fff;font:700 .74rem/1 var(--f-body);vertical-align:.12em}
+dialog.lb{padding:0;border:0;background:transparent;max-width:96vw;max-height:94vh}
+dialog.lb::backdrop{background:rgba(0,0,0,.78)}
+dialog.lb img{display:block;max-width:96vw;max-height:88vh;width:auto;height:auto;border-radius:8px;background:#fff}
+dialog.lb p{margin:8px 0 0;color:#fff;font-size:.9rem;text-align:center}
+dialog.lb button{position:fixed;top:12px;right:12px;font:600 .9rem var(--f-body);background:#fff;color:#16302f;border:0;border-radius:8px;padding:6px 12px;cursor:pointer}
+
+@media (max-width: 900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .toc{display:none}
+  .toc.open{display:block;position:fixed;inset:0;z-index:20;background:var(--bg);max-height:none;
+    padding:calc(64px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px))}
+  .mobilebar{display:flex;position:sticky;top:env(safe-area-inset-top, 0px);z-index:30;justify-content:space-between;align-items:center;
+    background:var(--bg);border-bottom:1px solid var(--line);padding-block:10px;margin-inline:calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+    padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+  .mobilebar b{font-family:var(--f-display);font-weight:800}
+  .mobilebar button{font:600 .9rem var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top, 0px);z-index:40;background:var(--bg)}
+  .step{padding-left:16px;padding-top:40px}
+}
+</style>
+</head>
+<body>
+
+<div class="shell" data-ns="rutas-usuario">
+<nav class="toc" id="toc" aria-label="Índice"><p class="brand"><span class="logo" role="img" aria-label="Sunshine Bouquet"></span>Transporte Sunshine<small>Manual de usuario</small></p><ol><li><a data-n="0" href="#que-es">¿Qué es esto?</a></li><li><a data-n="1" href="#antes">Antes de empezar</a></li><li><a data-n="2" href="#entrar">Entrar y salir</a></li><li><a data-n="3" href="#partes">Las partes de la aplicación</a></li><li><a data-n="4" href="#datos">Consultar datos</a></li><li><a data-n="5" href="#simulador">Correr el simulador</a></li><li><a data-n="6" href="#resultado">Cómo leer el resultado</a></li><li><a data-n="7" href="#corridas">Ver corridas anteriores</a></li><li><a data-n="8" href="#problemas">Problemas comunes</a></li><li><a data-n="9" href="#ayuda">Cuándo llamar al administrador</a></li></ol></nav>
+<main>
+<div class="mobilebar"><span class="lockup"><span class="logo" role="img" aria-label="Sunshine Bouquet"></span><b>Transporte Sunshine</b></span><button type="button" id="tocBtn" aria-expanded="false" aria-controls="toc">Índice</button></div>
+<section id="que-es"><p class="eyebrow">Manual de usuario (lector)</p>
+<h1>Consulta los datos, corre el simulador y lee el resultado</h1>
+<p class="lead">Transporte Sunshine es una página web interna para estudiar cómo se lleva al personal a las fincas. Funciona en el navegador, en <code>http://127.0.0.1:8000</code>. No cambia la operación real: calcula y guarda cada cálculo en un historial.</p>
+<div class="note tip"><b class="tag">Ojo</b><p>Este manual es para quien <b>consulta datos, corre el simulador y lee resultados</b>. Crear usuarios, importar datos, editar o borrar registros y arrancar el servidor son del administrador (<code>manual/MANUAL_ADMINISTRADOR.md</code>).</p></div>
+<ol><li>Te <b>muestra los datos</b>: personas, paraderos, fincas y tipos de bus.</li><li><b>Propone rutas nuevas</b> con el simulador, usando los paraderos que ya existen.</li><li><b>Compara el costo</b> con la red actual, de forma orientativa (<a href="#resultado">sección 6</a>).</li></ol>
+<p><b>Tu trabajo en 4 pasos:</b></p>
+<ol class="flow" aria-label="Tu trabajo"><li><a href="#entrar"><span>1</span>Entrar</a></li><li><a href="#datos"><span>2</span>Revisar los datos</a></li><li><a href="#simulador"><span>3</span>Ejecutar el simulador</a></li><li><a href="#resultado"><span>4</span>Leer el resultado</a></li></ol>
+<p class="legend">Pulsa una etapa para ir a ella.</p>
+<h3>Palabras que vas a ver</h3>
+<div class="tbl"><table><thead><tr><th>Palabra</th><th>Qué significa</th></tr></thead><tbody><tr><td>Finca</td><td>Lugar de trabajo adonde llegan las rutas. Ejemplo: YARUMO.</td></tr><tr><td>Paradero</td><td>Sitio donde sube la gente al bus. Cada persona tiene uno asignado.</td></tr><tr><td>Ruta propuesta</td><td>Recorrido que arma el simulador: varios paraderos seguidos y al final una finca.</td></tr><tr><td>Bus, buseta, micro</td><td>Tipos de vehículo. Cada uno tiene <b>capacidad</b> (cuántas personas lleva) y <b>costo</b>. El simulador elige el tipo y la cantidad más baratos que alcancen. Los tipos y capacidades salen de la pantalla <b>Tipos de bus</b>.</td></tr><tr><td>Corrida</td><td>Una ejecución del simulador, guardada con número, fecha y usuario. Una corrida guardada no cambia nunca.</td></tr><tr><td>Sin servicio</td><td>Personas que el simulador no pudo atender (sección 6).</td></tr></tbody></table></div></section>
+<section id="antes"><p class="eyebrow">Sección 1</p><h2>Antes de empezar</h2><p>Marca cada punto. La página recuerda lo que marcas en este navegador.</p><ul class="checklist" data-list="antes"><li><label><input type="checkbox" id="antes-1"><span class="t">La dirección <b>http://127.0.0.1:8000</b> abre en tu navegador.</span></label></li><li><label><input type="checkbox" id="antes-2"><span class="t">Tienes <b>usuario y contraseña</b>, dados por el administrador.</span></label></li></ul><div class="progress" data-progress="antes"><div class="bar"><i></i></div><span>0 de 2</span><button class="reset" type="button" data-reset="antes">Desmarcar todo</button></div><div class="note tip"><b class="tag">Tip</b><p>No puedes crearte una cuenta tú solo: no hay usuario por defecto. Pídela al administrador.</p></div></section>
+<section id="entrar"><p class="eyebrow">Sección 2</p><h2>Entrar y salir</h2><ol class="steps steps-plain" data-list="entrar"><li class="step"><p>Abre <b>http://127.0.0.1:8000</b> en el navegador.</p><label class="mark"><input type="checkbox" id="entrar-1">Hecho</label></li><li class="step"><p>Escribe tu <b>Usuario</b> y tu <b>Contraseña</b>.</p><label class="mark"><input type="checkbox" id="entrar-2">Hecho</label></li><li class="step"><p>Pulsa <b>Ingresar</b>.</p><label class="mark"><input type="checkbox" id="entrar-3">Hecho</label></li></ol><div class="progress" data-progress="entrar"><div class="bar"><i></i></div><span>0 de 3</span><button class="reset" type="button" data-reset="entrar">Empezar de nuevo</button></div><div class="note warn"><b class="tag">Pendiente</b><p>(captura pendiente) pantalla de entrada «Transporte Sunshine / Ingresa con tu usuario». Marcas: 1 campo Usuario, 2 campo Contraseña, 3 botón Ingresar</p></div>
+<!-- CAPTURA PENDIENTE: pantalla de entrada «Transporte Sunshine / Ingresa con tu usuario». Marcas: 1 campo Usuario, 2 campo Contraseña, 3 botón Ingresar --><div class="note done"><b class="tag">Listo</b><p>Cuando ves <i>“Hola, &lt;tu nombre&gt;”</i> y arriba el menú con Inicio, Personas, Paraderos, Fincas, Tipos de bus, Simulador y Corridas.</p></div><p>Para salir, pulsa <b>Salir</b> (arriba a la derecha, junto a tu nombre y rol). La sesión dura 12 horas; después la aplicación te lleva sola a la pantalla de entrada.</p><div class="note warn"><b class="tag">Cuidado</b><p>Si fallas la contraseña <b>5 veces seguidas</b>, el usuario se bloquea un rato (1 minuto; si sigues fallando, 2, 4… hasta 15). Espera y vuelve a intentar con calma. El mensaje es el mismo si el usuario no existe o si la contraseña es mala.</p></div></section>
+<section id="partes"><p class="eyebrow">Sección 3</p><h2>Las partes de la aplicación</h2><p>El menú de arriba tiene siete opciones. Como lector no ves <b>Usuarios</b>, <b>Importar</b> ni <b>Eventos</b>.</p><div class="note warn"><b class="tag">Pendiente</b><p>(captura pendiente) barra superior con el menú. Marcas: 1 menú (Inicio…Corridas), 2 tu nombre y rol, 3 botón Salir</p></div>
+<!-- CAPTURA PENDIENTE: barra superior con el menú. Marcas: 1 menú (Inicio…Corridas), 2 tu nombre y rol, 3 botón Salir --><div class="tbl"><table><thead><tr><th>Menú</th><th>Para qué sirve</th><th>Sección</th></tr></thead><tbody><tr><td>Inicio</td><td>Totales de personas, fincas, paraderos y tipos de bus, y la última corrida.</td><td><a href="#datos">4</a></td></tr><tr><td>Personas</td><td>Lista de personas con su finca y su paradero.</td><td><a href="#datos">4</a></td></tr><tr><td>Paraderos</td><td>Lista de paraderos con sus coordenadas.</td><td><a href="#datos">4</a></td></tr><tr><td>Fincas</td><td>Lista de fincas con sus coordenadas.</td><td><a href="#datos">4</a></td></tr><tr><td>Tipos de bus</td><td>Tipos de vehículo, capacidad y costo.</td><td><a href="#datos">4</a></td></tr><tr><td>Simulador</td><td>Ejecuta una simulación y muestra el resultado.</td><td><a href="#simulador">5</a></td></tr><tr><td>Corridas</td><td>Historial de simulaciones guardadas.</td><td><a href="#corridas">7</a></td></tr></tbody></table></div></section>
+<section id="datos"><p class="eyebrow">Sección 4</p><h2>Consultar datos</h2><p><b>Inicio</b> muestra cuatro totales (<b>Personas</b>, <b>Fincas</b>, <b>Paraderos</b>, <b>Tipos de bus</b>); cada número es un enlace a su lista. Debajo, la <b>Última corrida</b> completa, o <i>“Aún no hay corridas.”</i> si nadie ha simulado.</p><p>Las cuatro listas funcionan igual:</p><ol class="steps steps-plain" data-list="datos"><li class="step"><p>Pulsa el nombre de la lista en el menú.</p><label class="mark"><input type="checkbox" id="datos-1">Hecho</label></li><li class="step"><p>Para buscar, escribe en <b>Buscar</b> (parte de un nombre) y pulsa <b>Buscar</b>.</p><label class="mark"><input type="checkbox" id="datos-2">Hecho</label></li><li class="step"><p>Para ver solo activos o inactivos, cambia <b>Estado</b> (<b>Todos / Activos / Inactivos</b>).</p><label class="mark"><input type="checkbox" id="datos-3">Hecho</label></li><li class="step"><p>Si hay más de una página, usa el paginador de abajo (25 filas por página).</p><label class="mark"><input type="checkbox" id="datos-4">Hecho</label></li></ol><div class="progress" data-progress="datos"><div class="bar"><i></i></div><span>0 de 4</span><button class="reset" type="button" data-reset="datos">Empezar de nuevo</button></div><div class="note warn"><b class="tag">Pendiente</b><p>(captura pendiente) lista de Personas. Marcas: 1 cuadro Buscar, 2 selector Estado, 3 botón Buscar, 4 paginador</p></div>
+<!-- CAPTURA PENDIENTE: lista de Personas. Marcas: 1 cuadro Buscar, 2 selector Estado, 3 botón Buscar, 4 paginador --><div class="tbl"><table><thead><tr><th>Lista</th><th>Columnas</th></tr></thead><tbody><tr><td>Personas</td><td>Identificación, Nombre, Finca, Paradero, Activa</td></tr><tr><td>Paraderos</td><td>Nombre, Latitud, Longitud, Activo</td></tr><tr><td>Fincas</td><td>Nombre, Cód. nivel 2, Latitud, Longitud, Activa</td></tr><tr><td>Tipos de bus</td><td>Tipo, Capacidad, Costo, Activo</td></tr></tbody></table></div><p>Una fila <b>inactiva</b> no entra en el simulador. Una persona sin paradero aparece con la celda de <b>Paradero</b> vacía y tampoco se simula.</p><div class="note warn"><b class="tag">Cuidado</b><p>Como lector solo miras: no verás <b>Nuevo</b>, <b>Editar</b> ni <b>Borrar</b>. Si un dato está mal, avisa al administrador.</p></div><div class="note done"><b class="tag">Listo</b><p>Cuando ves la tabla con los registros. Si no hay coincidencias dice <i>“No hay registros.”</i></p></div></section>
+<section id="simulador"><p class="eyebrow">Sección 5</p><h2>Correr el simulador</h2><p>El simulador arma rutas nuevas con los <b>paraderos que ya existen</b>: empieza con una ruta por paradero, junta rutas mientras eso baje el costo, y elige el tipo de bus y la cantidad más baratos. Cada ruta debe caber en el tiempo máximo.</p><ol class="steps steps-plain" data-list="simulador"><li class="step"><p>Ve a <b>Simulador</b>.</p><label class="mark"><input type="checkbox" id="simulador-1">Hecho</label></li><li class="step"><p>Revisa <b>Velocidad (km/h)</b>. Viene en <b>25</b>: la velocidad media que se supone para el bus.</p><label class="mark"><input type="checkbox" id="simulador-2">Hecho</label></li><li class="step"><p>Revisa <b>Tiempo máximo de viaje (min)</b>. Viene en <b>60</b>: ninguna ruta puede tardar más, contando el tramo final hasta la finca.</p><label class="mark"><input type="checkbox" id="simulador-3">Hecho</label></li><li class="step"><p>Pulsa <b>Ejecutar simulación</b>.</p><label class="mark"><input type="checkbox" id="simulador-4">Hecho</label></li><li class="step"><p>Espera: el botón dice <i>“Calculando…”</i> y debajo <i>“Calculando rutas, puede tardar unos segundos…”</i>. No recargues la página.</p><label class="mark"><input type="checkbox" id="simulador-5">Hecho</label></li></ol><div class="progress" data-progress="simulador"><div class="bar"><i></i></div><span>0 de 5</span><button class="reset" type="button" data-reset="simulador">Empezar de nuevo</button></div><div class="note warn"><b class="tag">Pendiente</b><p>(captura pendiente) pantalla Simulador antes de ejecutar. Marcas: 1 Velocidad (km/h) = 25, 2 Tiempo máximo de viaje (min) = 60, 3 botón Ejecutar simulación</p></div>
+<!-- CAPTURA PENDIENTE: pantalla Simulador antes de ejecutar. Marcas: 1 Velocidad (km/h) = 25, 2 Tiempo máximo de viaje (min) = 60, 3 botón Ejecutar simulación --><div class="tbl"><table><thead><tr><th>Si cambias…</th><th>Qué pasa</th></tr></thead><tbody><tr><td>Velocidad más alta</td><td>Caben más paraderos por ruta: suelen salir menos rutas.</td></tr><tr><td>Velocidad más baja</td><td>Cada ruta cubre menos paraderos: suelen salir más rutas y buses.</td></tr><tr><td>Tiempo máximo más bajo</td><td>Rutas más cortas, más buses.</td></tr><tr><td>Tiempo máximo más alto</td><td>Rutas más largas, menos buses, pero viajes más largos para la gente.</td></tr><tr><td>Dejas un campo vacío</td><td>El servidor usa su valor por defecto (25 km/h y 60 min).</td></tr></tbody></table></div><p>La velocidad debe ser mayor que 0 y no pasar de 150 km/h; el tiempo, mayor que 0 y no pasar de 600 min.</p><div class="note done"><b class="tag">Listo</b><p>Cuando aparece el aviso <i>“Simulación terminada.”</i> y <i>“Corrida #… guardada en el historial.”</i> con el resultado debajo.</p></div><div class="note tip"><b class="tag">Tip</b><p>Cada vez que ejecutas se guarda una corrida nueva. Prueba varios valores y compáralos luego en <b>Corridas</b>.</p></div></section>
+<section id="resultado"><p class="eyebrow">Sección 6</p><h2>Cómo leer el resultado</h2><div class="note warn"><b class="tag">Cuidado</b><p>Lee primero el recuadro <b>Antes de leer las cifras</b>. El resultado es una <b>estimación para orientar una decisión, no un costo confirmado</b>.</p></div><p>Las advertencias que ves, y por qué importan:</p><div class="tbl"><table><thead><tr><th>Advertencia</th><th>Qué significa para ti</th></tr></thead><tbody><tr><td><i>“Comparación orientativa: la red actual se calcula como la suma de las tarifas REGULAR suponiendo un bus por fila de tarifa; no está confirmado con el proveedor.”</i></td><td>El <b>Costo red actual</b> es una suposición: un bus por cada tarifa del archivo. Puede estar por encima o por debajo del costo real.</td></tr><tr><td><i>“Solo … de … personas del maestro cruzan con el catálogo de rutas (… %); las demás no se simularon.”</i></td><td>El simulador cubre solo a las personas que cruzan con el catálogo de rutas. Si el % es bajo, comparar contra toda la red actual es injusto.</td></tr><tr><td><i>“Distancias en línea recta (haversine); el recorrido real por carretera es mayor.”</i></td><td>Los <b>Km</b> y <b>Min. máx.</b> son de una línea recta entre puntos. Por carretera serán más.</td></tr><tr><td><i>“… personas tienen identificación repetida con paraderos distintos; se usó la regla …”</i></td><td>Una misma persona aparecía con varios paraderos; se eligió uno.</td></tr></tbody></table></div><h3>El resumen</h3><div class="tbl"><table><thead><tr><th>Cifra</th><th>Qué significa</th></tr></thead><tbody><tr><td>Rutas</td><td>Cuántas rutas propone el simulador.</td></tr><tr><td>Buses</td><td>Total de vehículos entre todas las rutas.</td></tr><tr><td>Personas</td><td>Personas incluidas en la simulación.</td></tr><tr><td>Costo propuesto</td><td>Costo de todos los buses propuestos.</td></tr><tr><td>Costo red actual</td><td>Costo supuesto de la red de hoy (primera advertencia).</td></tr><tr><td>Comparación orientativa con la red actual</td><td>Diferencia en %. Con <b>−</b> (verde, <i>“(más barato)”</i>) lo propuesto cuesta menos; con <b>+</b> (rojo, <i>“(más caro)”</i>) cuesta más.</td></tr><tr><td>Sin servicio</td><td>Personas que no quedaron en ninguna ruta.</td></tr></tbody></table></div><div class="note warn"><b class="tag">No comparable</b><p>Si en lugar del porcentaje ves <i>“No comparable”</i>, no hay base honesta para comparar: no hubo rutas, no hay costo de la red actual, o las personas simuladas no son las mismas que se importaron (hay registros inactivos). Mira solo las cifras propuestas; no concluyas “más barato” ni “más caro”.</p></div><p>El pie del resumen dice con qué parámetros se corrió: <i>“Parámetros: 25 km/h, máximo 60 min.”</i> Si ves <i>“… persona(s) no tienen paradero asignado y no entraron en la simulación.”</i>, es un problema de datos: avisa al administrador.</p><h3>Por qué hay «Sin servicio»</h3><p>El simulador <b>no pone en una ruta</b> a los paraderos que quedan a <b>más de 25 km de la finca</b>. Esas personas aparecen en la sección <b>Sin servicio</b>, por ejemplo <i>“2 persona(s) en el paradero #9, finca YARUMO”</i>. Si todo está cubierto dice <i>“Todas las personas tienen servicio.”</i> Que haya «Sin servicio» no es un error de la aplicación: ese paradero necesita otra solución (decídela con el administrador).</p><h3>Rutas propuestas: qué es cada columna</h3><div class="note warn"><b class="tag">Pendiente</b><p>(captura pendiente) tabla «Rutas propuestas» de una corrida. Marcas: 1 columna Paraderos, 2 Personas, 3 Km y Min. máx., 4 Bus y Cant., 5 Costo</p></div>
+<!-- CAPTURA PENDIENTE: tabla «Rutas propuestas» de una corrida. Marcas: 1 columna Paraderos, 2 Personas, 3 Km y Min. máx., 4 Bus y Cant., 5 Costo --><div class="tbl"><table><thead><tr><th>Columna</th><th>Qué significa</th></tr></thead><tbody><tr><td>Ruta</td><td>Número de la ruta dentro de la corrida.</td></tr><tr><td>Finca</td><td>Finca donde termina.</td></tr><tr><td>Paraderos</td><td>Nombres de los paraderos que recoge y, entre paréntesis, cuántos son.</td></tr><tr><td>Personas</td><td>Personas que viajan en esa ruta.</td></tr><tr><td>Km</td><td>Distancia total en línea recta.</td></tr><tr><td>Min. máx.</td><td>Minutos del viaje más largo de la ruta; nunca pasa del tiempo máximo que fijaste.</td></tr><tr><td>Bus</td><td>Tipo de bus y, entre paréntesis, su capacidad. Ejemplo: <i>BUS (40)</i>.</td></tr><tr><td>Cant.</td><td>Cuántos buses de ese tipo hacen falta.</td></tr><tr><td>Costo</td><td>Costo de esa ruta (buses × costo del tipo).</td></tr></tbody></table></div></section>
+<section id="corridas"><p class="eyebrow">Sección 7</p><h2>Ver corridas anteriores</h2><ol class="steps steps-plain" data-list="corridas"><li class="step"><p>Ve a <b>Corridas</b>.</p><label class="mark"><input type="checkbox" id="corridas-1">Hecho</label></li><li class="step"><p>Verás una fila por corrida: <b>#</b>, <b>Fecha</b>, <b>Usuario</b>, <b>Rutas</b>, <b>Buses</b>, <b>Costo</b> y <b>Dif. vs. actual</b>.</p><label class="mark"><input type="checkbox" id="corridas-2">Hecho</label></li><li class="step"><p>Pulsa <b>Ver</b> para abrir el detalle (la misma pantalla de resultado). Para volver, pulsa <b>← Volver a corridas</b>.</p><label class="mark"><input type="checkbox" id="corridas-3">Hecho</label></li></ol><div class="progress" data-progress="corridas"><div class="bar"><i></i></div><span>0 de 3</span><button class="reset" type="button" data-reset="corridas">Empezar de nuevo</button></div><div class="note warn"><b class="tag">Pendiente</b><p>(captura pendiente) historial de Corridas. Marcas: 1 columna Dif. vs. actual, 2 botón Ver</p></div>
+<!-- CAPTURA PENDIENTE: historial de Corridas. Marcas: 1 columna Dif. vs. actual, 2 botón Ver --><p>En <b>Dif. vs. actual</b> un guion (<b>—</b>) equivale a <i>No comparable</i>. Una corrida guardada <b>no cambia</b>, aunque después se editen paraderos, fincas o buses. Como lector no ves el botón <b>Borrar</b>. Si aún no hay corridas dice <i>“Aún no hay corridas. Ejecuta una desde el simulador.”</i></p></section>
+<section id="problemas"><p class="eyebrow">Sección 8</p><h2>Problemas comunes</h2><p>Escribe o pega el mensaje que ves, o una palabra clave.</p><label for="q" class="field">Buscar un error</label><input id="q" class="search" type="search" placeholder="Ej.: Usuario o clave incorrectos" autocomplete="off" data-empty="No encontré ese mensaje. Prueba con una o dos palabras clave. Si no aparece, copia el mensaje y pide ayuda."><p class="hits" id="hits" aria-live="polite"></p><div class="errors" id="errors"></div></section>
+<section id="ayuda"><p class="eyebrow">Sección 9</p><h2>Cuándo llamar al administrador</h2><ul><li>No tienes usuario o contraseña, o tu cuenta sigue bloqueada pasado el tiempo que indica el mensaje.</li><li>La aplicación no abre o dice <i>“No se pudo conectar con el servidor.”</i> y no vuelve tras recargar.</li><li>Ves un mensaje con <i>“Código de soporte: …”</i>.</li><li>Un dato está mal (persona sin paradero, finca con coordenadas raras, tipo de bus sin costo).</li><li>El simulador dice que faltan tipos de bus, personas o paraderos activos.</li><li>Una cifra del resultado te parece absurda (por ejemplo, casi todas las personas en <b>Sin servicio</b>).</li><li>Necesitas importar datos, crear usuarios o editar registros.</li></ul><div class="note tip"><b class="tag">Tip</b><p>Cuando avises, copia el mensaje exacto o haz una captura con <kbd>Win</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd>.</p></div></section>
+<footer>Sunshine Bouquet · Transporte Sunshine · manual de usuario · revisión 26-10-2026.</footer>
+</main></div>
+<script>
+// Errores conocidos: [área, mensaje literal (sacado del código), causa, qué hacer]
+window.ERR = [["Arranque", "La página no abre en http://127.0.0.1:8000", "La aplicación no está encendida.", "Avisa al administrador: la app no abre en 127.0.0.1:8000."], ["Arranque", "No se pudo conectar con el servidor.", "Se cayó la aplicación o la conexión.", "Espera un minuto y recarga con F5; si sigue, avisa al administrador."], ["Entrar", "Ingresa tu usuario y tu contraseña.", "Dejaste un campo vacío.", "Llena los dos y pulsa Ingresar."], ["Entrar", "Usuario o clave incorrectos.", "Usuario o contraseña mal escritos.", "Revisa mayúsculas. Si no los recuerdas, pídelos al administrador."], ["Entrar", "Demasiados intentos fallidos. Intenta de nuevo en …", "Fallaste 5 veces: bloqueo temporal (1 a 15 min).", "Espera ese tiempo sin intentar de nuevo."], ["Entrar", "Demasiados intentos, espera unos minutos.", "Hay muchos intentos desde este equipo.", "Espera unos minutos."], ["Entrar", "No se pudo ingresar.", "Falló la entrada sin explicación.", "Intenta otra vez; si se repite, avisa al administrador."], ["Sesión", "Tu sesión no es válida o venció. Inicia sesión de nuevo.", "Pasaron 12 horas o se cerró tu sesión.", "Vuelve a ingresar."], ["Permisos", "No tienes permiso para esta acción. / Solo un administrador puede hacer esto.", "Intentaste algo que es solo del administrador.", "Pídeselo al administrador."], ["Simulador", "No hay tipos de bus activos: crea o activa al menos uno.", "En Tipos de bus no hay ninguno activo.", "Avisa al administrador: no hay tipos de bus activos."], ["Simulador", "No hay personas activas con finca activa para simular.", "No hay personas activas o sus fincas están inactivas (o no se cargaron datos).", "Avisa al administrador con este mensaje."], ["Simulador", "Ninguna persona activa tiene un paradero activo asignado.", "A nadie le queda un paradero activo.", "Avisa al administrador con este mensaje."], ["Simulador", "Error bajo Velocidad (km/h) o Tiempo máximo de viaje (min)", "El valor es 0, negativo o demasiado alto.", "Usa velocidad entre 1 y 150, tiempo entre 1 y 600."], ["Simulador", "Calculando rutas, puede tardar unos segundos…", "La simulación es larga con muchos paraderos.", "Espera sin recargar. Si pasan varios minutos, avisa al administrador."], ["Resultado", "No comparable", "No hay base para comparar con la red actual.", "Mira la sección 6. Si no lo esperabas, avisa al administrador."], ["General", "Error inesperado (…) / Código de soporte: …", "Falla interna de la aplicación.", "Avisa al administrador y dale el mensaje y el código."], ["Listas", "No hay registros.", "La búsqueda o el filtro no encontró nada.", "Borra Buscar, pon Estado en Todos y busca de nuevo."]];
+(function(){
+  var shell = document.querySelector(".shell");
+  var NS = (shell && shell.dataset.ns) || "cr";
+  var store = {
+    get: function(k){ try { return JSON.parse(localStorage.getItem(NS + ":" + k)); } catch(e){ return null; } },
+    set: function(k, v){ try { localStorage.setItem(NS + ":" + k, JSON.stringify(v)); } catch(e){} }
+  };
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Botones de copiar
+  document.querySelectorAll(".cmd").forEach(function(box){
+    var pre = box.querySelector("pre");
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "copy"; b.textContent = "Copiar";
+    b.addEventListener("click", function(){
+      var text = pre.textContent;
+      var done = function(){ b.textContent = "Copiado"; setTimeout(function(){ b.textContent = "Copiar"; }, 1500); };
+      var fallback = function(){
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        b.textContent = "Pulsa Ctrl+C";
+        setTimeout(function(){ b.textContent = "Copiar"; }, 2500);
+      };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+        else fallback();
+      } catch(e){ fallback(); }
+    });
+    box.appendChild(b);
+  });
+
+  // Checklists con progreso. Las listas con data-por-finca se guardan por finca.
+  function fincaCode(){ var i = $("fFinca"); return (i && i.value.trim().toLowerCase().replace(/\s+/g, "")) || "general"; }
+  function listEl(name){ return document.querySelector('[data-list="' + name + '"]'); }
+  function key(name){ var l = listEl(name); return l && l.hasAttribute("data-por-finca") ? name + ":" + fincaCode() : name; }
+  function boxes(name){ return Array.from(document.querySelectorAll('[data-list="' + name + '"] input[type=checkbox]')); }
+  function paint(name){
+    var bs = boxes(name), n = bs.filter(function(b){ return b.checked; }).length;
+    var p = document.querySelector('[data-progress="' + name + '"]');
+    if (!p) return;
+    p.querySelector("i").style.width = (bs.length ? n / bs.length * 100 : 0) + "%";
+    p.querySelector("span").textContent = n + " de " + bs.length + (n === bs.length ? " · completo" : "");
+  }
+  function load(name){
+    var saved = store.get(key(name)) || {};
+    boxes(name).forEach(function(b){ b.checked = !!saved[b.id]; });
+    paint(name);
+  }
+  var names = Array.from(new Set(Array.from(document.querySelectorAll("[data-list]")).map(function(el){ return el.dataset.list; })));
+  names.forEach(function(name){
+    boxes(name).forEach(function(b){
+      b.addEventListener("change", function(){
+        var s = store.get(key(name)) || {}; s[b.id] = b.checked; store.set(key(name), s); paint(name);
+      });
+    });
+  });
+  document.querySelectorAll("[data-reset]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var name = btn.dataset.reset;
+      boxes(name).forEach(function(b){ b.checked = false; });
+      store.set(key(name), {}); paint(name);
+    });
+  });
+
+  names.forEach(load);
+
+  // Buscador de errores (datos en window.ERR: [área, mensaje, causa, solución])
+  var q = $("q");
+  if (q && window.ERR){
+    var norm = function(s){ return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim(); };
+    var STOP = new Set("el la los las de del un una y o a en que se no es por con para al su lo x".split(" "));
+    var sig = function(s){ return s.split(" ").filter(function(w){ return w.length > 2 && !STOP.has(w); }); };
+    var rows = window.ERR.map(function(e){ return { e: e, hay: norm(e.join(" ")), msg: sig(norm(e[1])) }; });
+    var list = $("errors"), hits = $("hits");
+    var el = function(tag, cls, text){ var n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+    var render = function(){
+      var raw = norm(q.value), words = sig(raw);
+      var shown = rows.map(function(r){
+        if (!words.length) return { r: r, s: 1 };
+        var hit = words.filter(function(w){ return r.hay.indexOf(w) >= 0; }).length;
+        var inQ = r.msg.filter(function(w){ return raw.indexOf(w) >= 0; }).length;
+        return { r: r, s: Math.max(hit / words.length, r.msg.length ? inQ / r.msg.length : 0) };
+      }).filter(function(x){ return x.s >= (words.length ? 0.5 : 0); })
+        .sort(function(a, b){ return b.s - a.s; });
+      list.textContent = "";
+      shown.forEach(function(x){
+        var e = x.r.e, card = el("div", "err");
+        card.appendChild(el("span", "area", e[0]));
+        card.appendChild(el("q", null, e[1]));
+        card.appendChild(el("span", "why", e[2]));
+        var fix = el("span", "fix"); fix.appendChild(el("b", null, "Qué hacer: ")); fix.appendChild(document.createTextNode(e[3]));
+        card.appendChild(fix);
+        list.appendChild(card);
+      });
+      if (!shown.length) list.appendChild(el("div", "empty", q.dataset.empty || "No encontré ese mensaje. Prueba con una o dos palabras clave."));
+      hits.textContent = words.length ? shown.length + " resultado" + (shown.length === 1 ? "" : "s") : "Mostrando los " + rows.length + " problemas conocidos.";
+    };
+    q.addEventListener("input", render); render();
+  }
+
+  // Índice: sección activa y menú móvil
+  var links = Array.from(document.querySelectorAll(".toc a"));
+  var byId = {}; links.forEach(function(a){ byId[a.getAttribute("href").slice(1)] = a; });
+  if ("IntersectionObserver" in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if (en.isIntersecting && byId[en.target.id]){
+          links.forEach(function(a){ a.classList.remove("active"); });
+          byId[en.target.id].classList.add("active");
+        }
+      });
+    }, { rootMargin: "-20% 0px -70% 0px" });
+    document.querySelectorAll("main section[id]").forEach(function(s){ io.observe(s); });
+  }
+  var toc = $("toc"), btn = $("tocBtn");
+  var close = function(){ toc.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); btn.textContent = "Índice"; };
+  btn.addEventListener("click", function(){
+    var open = toc.classList.toggle("open");
+    btn.setAttribute("aria-expanded", open); btn.textContent = open ? "Cerrar" : "Índice";
+  });
+  links.forEach(function(a){ a.addEventListener("click", function(){ if (toc.classList.contains("open")) close(); }); });
+})();
+
+
+</script>
+
+<script>
+// Capturas: clic para ver en grande; Esc o clic fuera para cerrar.
+(function(){
+  var dlg = document.createElement("dialog");
+  dlg.className = "lb";
+  dlg.setAttribute("aria-label", "Captura ampliada");
+  dlg.innerHTML = '<button type="button">Cerrar</button><img alt=""><p></p>';
+  document.body.appendChild(dlg);
+  var img = dlg.querySelector("img"), cap = dlg.querySelector("p");
+  document.addEventListener("click", function(e){
+    var b = e.target.closest && e.target.closest(".shot .zoom");
+    if (!b) return;
+    var src = b.querySelector("img");
+    img.src = src.src; img.alt = src.alt;
+    var fc = b.parentNode.querySelector("figcaption");
+    cap.textContent = fc ? fc.textContent : "";
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+  });
+  dlg.addEventListener("click", function(e){ if (e.target === dlg || e.target.tagName === "BUTTON" || e.target === img) dlg.close(); });
+})();
+</script>
+</body>
+</html>

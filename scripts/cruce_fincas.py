@@ -19,7 +19,6 @@ Sin argumento usa datos/fincas_sunshine.kml.
 
 from __future__ import annotations
 
-import csv
 import difflib
 import json
 import math
@@ -33,7 +32,7 @@ import openpyxl
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.core.config import settings  # noqa: E402
+from app.core.config import settings
 
 RAIZ = Path(__file__).resolve().parents[1]
 DATOS = RAIZ / "datos"

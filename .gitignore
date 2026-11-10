@@ -22,3 +22,14 @@ datos/
 data/
 *.xlsx
 *.kml
+
+# App web
+data/app.db
+data/app.db-*
+logs/
+node_modules/
+frontend/dist/
+frontend/.angular/
+.env
+*.db
+*.pptx
