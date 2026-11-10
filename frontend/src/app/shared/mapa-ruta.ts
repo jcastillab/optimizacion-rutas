@@ -44,14 +44,14 @@ export function proyectar(puntos: { lat: number; lon: number }[], ancho = W, alt
               <title>{{ p.n }}. {{ p.nombre }}</title>
               <circle [attr.cx]="p.x" [attr.cy]="p.y" r="18" fill="#00B2A9" stroke="#FFFFFF" stroke-width="3" />
               <text [attr.x]="p.x" [attr.y]="p.y + 6" text-anchor="middle" fill="#FFFFFF" font-size="18" font-weight="700">{{ p.n }}</text>
-              <text [attr.x]="p.x + (p.x > W / 2 ? -28 : 28)" [attr.y]="p.y + 6" [attr.text-anchor]="p.x > W / 2 ? 'end' : 'start'" fill="#FFFFFF" font-size="16">{{ p.nombre }}</text>
+              <text [attr.x]="p.x + (p.x > W / 2 ? -28 : 28)" [attr.y]="p.y + 6" [attr.text-anchor]="p.x > W / 2 ? 'end' : 'start'" fill="currentColor" font-size="16">{{ p.nombre }}</text>
             </g>
           }
           @if (d.finca) {
             <g>
               <title>Finca {{ d.finca.nombre }}</title>
               <rect [attr.x]="d.finca.x - 20" [attr.y]="d.finca.y - 20" width="40" height="40" fill="#E64393" stroke="#FFFFFF" stroke-width="3" />
-              <text [attr.x]="d.finca.x" [attr.y]="d.finca.y + 40" text-anchor="middle" fill="#FFFFFF" font-size="18" font-weight="700">{{ d.finca.nombre }}</text>
+              <text [attr.x]="d.finca.x" [attr.y]="d.finca.y + 40" text-anchor="middle" fill="currentColor" font-size="18" font-weight="700">{{ d.finca.nombre }}</text>
             </g>
           }
         </svg>

@@ -65,7 +65,7 @@ def main() -> None:
         page.wait_for_timeout(800)
 
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        b = p.chromium.launch(channel=os.environ.get("DEMO_CANAL") or None)
         ctx = b.new_context(viewport={"width": 1440, "height": 900}, locale="es-CO")
         page = ctx.new_page()
         ir(page, "/login")
@@ -95,10 +95,10 @@ def main() -> None:
         foto(page, "10_simulador_form")
         simular(page, "simular_60min_s")
         foto(page, "11_resultado_resumen", [("dl.kpis", 1), (".estado.aviso", 2), ("dl.kpis[aria-label]", 3)])
-        page.locator("text=Rutas propuestas").scroll_into_view_if_needed()
+        page.get_by_role("heading", name="Rutas propuestas").scroll_into_view_if_needed()
         page.wait_for_timeout(300)
         foto(page, "12_resultado_rutas", [("table", 1)])
-        page.locator("text=Mapa de la ruta").scroll_into_view_if_needed()
+        page.get_by_role("heading", name="Mapa de la ruta").scroll_into_view_if_needed()
         page.wait_for_timeout(500)
         foto(page, "13_resultado_mapa", [("svg.mapa-ruta", 1)])
         foto(page, "14_resultado_completo", full=True)
